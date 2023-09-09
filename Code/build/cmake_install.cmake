@@ -42,6 +42,35 @@ if(NOT DEFINED CMAKE_OBJDUMP)
   set(CMAKE_OBJDUMP "/usr/bin/objdump")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/home/arthos/Simuscle/Code/build/imgui/cmake_install.cmake")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  if(EXISTS "$ENV{DESTDIR}/home/arthos/Simuscle/Code/exe" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}/home/arthos/Simuscle/Code/exe")
+    file(RPATH_CHECK
+         FILE "$ENV{DESTDIR}/home/arthos/Simuscle/Code/exe"
+         RPATH "")
+  endif()
+  list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
+   "/home/arthos/Simuscle/Code/exe")
+  if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  file(INSTALL DESTINATION "/home/arthos/Simuscle/Code" TYPE EXECUTABLE FILES "/home/arthos/Simuscle/Code/build/exe")
+  if(EXISTS "$ENV{DESTDIR}/home/arthos/Simuscle/Code/exe" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}/home/arthos/Simuscle/Code/exe")
+    if(CMAKE_INSTALL_DO_STRIP)
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}/home/arthos/Simuscle/Code/exe")
+    endif()
+  endif()
+endif()
+
 if(CMAKE_INSTALL_COMPONENT)
   set(CMAKE_INSTALL_MANIFEST "install_manifest_${CMAKE_INSTALL_COMPONENT}.txt")
 else()
