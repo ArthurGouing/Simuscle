@@ -17,9 +17,9 @@ set(LIBS imgui GL glfw rt m dl)
 
 
 # Crée des variables avec les fichiers à compiler
-# set(SRCS main.cpp) # Utiliser file(GLOB RESCUE ...) plutot
+# set(SRCS main.cpp) # Utiliser file(GLOB_RESCUE ...) plutot
 file(GLOB SRCS *.cpp)
-file(GLOB HEADERS glad.c *.cpp)
+file(GLOB HEADERS glad.c *.h)
 
 # set(HEADERS ...) # Idem
 

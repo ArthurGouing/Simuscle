@@ -21,16 +21,16 @@ void App::window_resize_event(int width, int height)
   // Calculate aspect ratio
   float aspect = float(width) / float(height ? height : 1);
 
-  // Set near plane to 3.0, far plane to 7.0, field of view 45 degrees
-  const float zNear = 1.0, zFar = 1500.0, fov = 45.0;
+  // Update projection matrix;
+  _renderer->update_projection(aspect);
+  Info_Print(std::to_string(width)+"x"+std::to_string(height));
 
   // Reset projection
-  projection = mat4(1.0f);
+  // projection = mat4(1.0f);
 
   // Set perspective projection
-  projection = perspective(radians(fov), aspect, zNear, zFar);
+  // projection = perspective(radians(fov), aspect, zNear, zFar);
 
-  Info_Print(std::to_string(width)+"x"+std::to_string(height));
 }
 
 
@@ -51,34 +51,28 @@ void App::mouse_cursor_event(double xpos, double ypos)
 
     if (firstMouse)
     {
-      lastmousepos = mousepos+vec2(0.0001f, 0.00001f);
+      _lastmousepos = mousepos+vec2(0.0001f, 0.00001f);
       firstMouse = false  ;
     }                     
-    diff = mousepos-lastmousepos;
-    lastmousepos = mousepos;
+    vec2 diff = mousepos-_lastmousepos;
+    _lastmousepos = mousepos;
     if (rot and !(mov or scale))
     {
-    rotationAxis = transpose(rotation) * vec4(-diff[1], diff[0], 0.0f, 1.0f);
-    rotationAxis = normalize(rotationAxis);
-    rotationAngle = length(diff) * sensi_rot;
-    rotation = rotate(rotation, radians(rotationAngle), rotationAxis);
-    if (rotationAxis[0]!=rotationAxis[0]) {
-      Warn_Print("NAN in rotationAxis vector computation for camera view");
-      rotationAxis = glm::vec3(0.0f,0.0f,1.0f);
-    }
+    float angle = length(diff) * sensi_rot;
+    _renderer->update_rotation(diff, angle);
+    // if (rotationAxis[0]!=rotationAxis[0]) {
+    //   Warn_Print("NAN in rotationAxis vector computation for camera view");
+    //   rotationAxis = glm::vec3(0.0f,0.0f,1.0f);
+    // }
     }
     if (mov)
     {
-      camerapos = camerapos + (cameradist * sensi_mov) * vec3(transpose(rotation) *vec4(diff[0], diff[1], 0.0f, 1.0f));
-      // Vec3_Print("Camera position :", camerapos);
+      _renderer->update_camerapos(sensi_mov * diff);
     }
     if (scale)
     {
-      float d;
-      d = (diff[1]<0) ? sensi_scale * length(diff) :  -sensi_scale * length(diff);
-      Info_Print(std::to_string(d));
-      // CHoisir le signe en fonction du rapprochement avec le centre de l'écran(comme Blender)
-      cameradist = cameradist + d; 
+      float dist = (diff[1]<0) ? sensi_scale * length(diff) :  -sensi_scale * length(diff);
+      _renderer->update_cameradist(dist);
     }
   }
 }
@@ -94,10 +88,8 @@ static void mouse_scroll_callback(GLFWwindow* window, double xoffset, double yof
 }
 void App::mouse_scroll_event(double yoffset)
 {
-  float d = float(yoffset);
-  Info_Print(std::to_string(sensi_scale * d));
-  // CHoisir le signe en fonction du rapprochement avec le centre de l'écran(comme Blender)
-  cameradist = cameradist + sensi_scale * d; 
+  float dist = sensi_scale * float(-yoffset);
+  _renderer->update_cameradist(dist);
 }
 
 
@@ -145,13 +137,24 @@ void App::processInput(GLFWwindow *window)
 }
 
 // Constructor
-App::App() :
-  size_window(1.7f), show_demo_window(true), show_another_window(false)
+App::App(Renderer* renderer) :
+  _renderer(renderer),
+  size_window(1.7f), show_demo_window(true), show_another_window(false),  // GLFW variable
+
+  sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(1.f),                  // Camera control variable
+  camera_is_moving(false), rot(false), mov(false), scale(false),
+  firstMouse(true)
+{
+  Title_Print("Launch Simuscle App");
+  Info_Print("Commit  : ******");
+  Info_Print("Modif   : 23/09/23");
+  Info_Print("Version : 0.0.0");
+}
+
+void App::Init()
 {
   /******** Init OpenGL ********/
-  Title_Print("Launch Simuscle App");
-
-  // Init GLFW
+  Title_Print("Initialisation");
   Info_Print("Init GLFW window");
   glfwInit();
   // Choose GLSL version 
@@ -162,94 +165,28 @@ App::App() :
   // Create window with graphics context
   Info_Print("Create GLFW window");
   window = glfwCreateWindow(size_window*1280, size_window*720, "Simuscle", nullptr, nullptr);
-  if (window == nullptr)
-    Err_Print("Failed to launch GLFW window", "main.cpp");
-    // return 1; //TODO
+  // if (window == nullptr)
+  //   Err_Print("Failed to launch GLFW window", "main.cpp");
+  //    // return 1; //TODO
+
+  // Parameters
+  Info_Print("Set GLFW parameters");
   glfwMakeContextCurrent(window);
   // Link callback function
-  Info_Print("Set GLFW callback function");
   glfwSetWindowUserPointer(window, this);
   glfwSetFramebufferSizeCallback(window, window_size_callback);
   glfwSetScrollCallback(window, mouse_scroll_callback);
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
-
-  glfwSwapInterval(1); // Enable vsync
-                       // Load extension's functions
+  // Enable vsync
+  glfwSwapInterval(1);
+  // Load extension's functions
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
-  /******** Init Renderer ********/
-  // vertex shader
-  Title_Print("Vertex shader");
+  /******** Render Init *******/
+  Title_Print("Init Renderer");
+  _renderer->Init();
 
-  Info_Print("read vertex shader");
-  std::string vshader_src = "base_shader.vert";
-  std::ifstream vertexShaderFile("base_shader.vert");
-  std::ostringstream vertexBuffer;
-  vertexBuffer << vertexShaderFile.rdbuf();
-  std::string vertexBufferStr = vertexBuffer.str();
-  // Warning: safe only until vertexBufferStr is destroyed or modified
-  const GLchar *source_vert = vertexBufferStr.c_str();
-  // const GLchar *source_vert = (const GLchar *)vshader_src.c_str();
-
-  unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  Info_Print("Vertex shader: ");
-  Info_Print(source_vert);
-  glShaderSource(vertexShader, 1, &source_vert, 0);
-  glCompileShader(vertexShader);
-  Info_Print("Done Compile vert Shader");
-  // check for shader compile errors
-  int success;
-  char infoLog[512];
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-  if (!success)
-  {
-      glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-      Err_Print(infoLog, source_vert);
-      // return 1; //TODO
-  }
-
-  // fragment shader
-  Title_Print("Fragment shader");
-
-  std::string fshader_src = "base_shader.frag";
-  std::ifstream fragShaderFile(fshader_src);
-  std::ostringstream fragBuffer;
-  fragBuffer << fragShaderFile.rdbuf();
-  std::string fragBufferStr = fragBuffer.str();
-  // Warning: safe only until vertexBufferStr is destroyed or modified
-  const GLchar *source_frag = fragBufferStr.c_str();
-  // const GLchar *source_vert = (const GLchar *)vshader_src.c_str();
-  //
-  unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  Info_Print(source_frag);
-  glShaderSource(fragmentShader, 1, &source_frag, NULL);
-  glCompileShader(fragmentShader);
-  // check for shader compile errors
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-  if (!success)
-  {
-      glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-      Err_Print(infoLog, source_frag);
-      // return 1; //TODO
-  }
-  // link shader
-  Info_Print("Link shader");
-  shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  glLinkProgram(shaderProgram);
-  // check for linking errors
-  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success) {
-      glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-      std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-      // return 1; //TODO
-  }
-  vertexShaderFile.close();
-  fragShaderFile.close();
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
   /******** Init ImGUI ********/
   Title_Print("Init ImGUI");
 
@@ -283,49 +220,16 @@ App::App() :
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  /******* App Var initialisation ********/
-  Title_Print("Other var Init");
-  // Our state
-  // bool show_demo_window = true;
-  // bool show_another_window = false;
-  // bool up = true;
-  // int frame = 0;
-  // ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-  // view = glm::translate(view, cameraMov);
-
-  frame = 0;
-  sensitivity = 0.3f;
-  sensi_rot = 0.3f;
-  sensi_mov = 0.0007f;
-  sensi_scale = 1.f;
-
-  firstMouse=true;
-  projection = mat4(1.0f);
-  view = mat4(1.0f);
-  camerapos = vec3(0.0f, 0.0f, 0.0f);
-  cameradist = 5.0f;
-  rotation= mat4(1.0f);
-  camera_is_moving = false;
-  rot = false; mov = false; scale = false;
-  // rotationAxis = vec3(1.0f, 0.0f, 0.0f);
-  // rotationAngle = 45;
-  // rotation = rotate(rotation, radians(-rotationAngle), rotationAxis);
-
-
-
-  // clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-  // view = glm::translate(view, cameraMov);
-
   // To get the 1st render strange...
   window_resize_event(size_window*1280, size_window*720);
-  Info_Print("End of init");
+  Info_Print("initialisation Done");
 }
 
 
 void App::Run()
 {
   Title_Print("Run");
-  Info_Print("Running");
+  Info_Print("Running...");
   std::cout << glfwWindowShouldClose(window) << std::endl;
   std::cout << window << std::endl;
   while (!glfwWindowShouldClose(window))
@@ -333,6 +237,7 @@ void App::Run()
    // Input
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
+
     processInput(window);
     glfwPollEvents();
 
@@ -451,7 +356,6 @@ void App::Run()
     ImGui::Checkbox("Another Window", &show_another_window);
 
     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-    ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
     if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
       counter++;
@@ -463,66 +367,7 @@ void App::Run()
 
     // Rendering
     ImGui::Render();
-
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Camera transform
-    view = mat4(1.0f);
-    view = glm::translate(view, vec3(0.0f, 0.0f, -cameradist));
-    view = view * rotation;
-    view = translate(view, camerapos);
-    
-    glm::mat4 vp_mat = projection * view;
-
-    int modelLoc = glGetUniformLocation(shaderProgram, "vp_mat");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(vp_mat));
-
-    float vertices[] = {
-         0.5f,  0.5f, 0.0f,  // top right
-         0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left 
-    };
-    unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 3,  // first Triangle
-        1, 2, 3   // second Triangle
-    };
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
-
-    glUseProgram(shaderProgram);
-    glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-
-
-    // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-    // glClear(GL_COLOR_BUFFER_BIT);
+    _renderer->Draw();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Update and Render additional Platform Windows

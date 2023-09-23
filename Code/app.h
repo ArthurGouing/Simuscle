@@ -27,23 +27,25 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "tools.h"
+#include "renderer.h"
 
 
 class App {
   public:
     // Constructor
-    App();
+    App(Renderer* renderer);
+    // Init
+    void Init();
     // Run
     void Run();
     //Destructor
     ~App();
 
     // Inner Classs
+    Renderer* _renderer;
+
     // App variable
-    bool firstMouse;
     float size_window;
-    int frame;
-    ImVec4 clear_color;
     float deltaTime;
     float lastFrame;
     bool show_demo_window;
@@ -66,30 +68,21 @@ class App {
     void processInput(GLFWwindow *window);
 
   private:
-    
-
     // mouse variable
-    glm::vec2 diff;
-    glm::vec2 lastmousepos;
-    glm::vec3 rotationAxis;
-    float rotationAngle;
-    float sensitivity;
+    bool firstMouse;
+    // glm::vec2 diff;
+    glm::vec2 _lastmousepos;
 
     // Camera projection matrix
-    glm::mat4 projection;
-    glm::mat4 view;
-    glm::vec3 camerapos;
-    float cameradist;
-    glm::mat4 rotation;
+    // glm::mat4 projection;
+    // glm::mat4 view;
+    glm::vec3 camera_translation;
+    // float cameradist;
+    // glm::mat4 rotation;
     bool camera_is_moving;
     bool rot;
     bool mov;
     bool scale;
-
-
-    unsigned int vertexShader;
-    unsigned int fragmendShader;
-    unsigned int shaderProgram;
 };
 
 

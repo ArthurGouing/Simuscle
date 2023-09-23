@@ -10,11 +10,14 @@
 
 //******** LIBRARY ******** 
 #include "app.h"
+#include "renderer.h"
 
 int main()
 {
   // Initialize the application
-  App Simuscle_app;
+  Renderer basic_render;
+  App Simuscle_app(&basic_render);
+  Simuscle_app.Init();
 
   // Run the application
   Simuscle_app.Run();
