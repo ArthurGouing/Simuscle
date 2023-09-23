@@ -54,6 +54,25 @@ void Mat4_Print(std::string msg, glm::mat4 mat, bool ansi_color)
   }
 }
 
+void Vec3_Print(std::string msg, glm::vec3 vec, bool ansi_color)
+{
+  /*
+   Print the glm::vec3 vector with the follwing format.
+    msg
+    x
+    y
+    z
+  */
+  unsigned short precision = 7;
+  std::cout.precision(precision-2);
+
+  std::cout << "  " << msg << std::endl;
+  for (int i = 0; i<3; i++) {
+    std::cout << std::setw(precision);
+    std::cout << vec[i] << std::endl;
+  }
+}
+
 // ImGui tools
 // static void HelpMarker(const char* desc)
 // {

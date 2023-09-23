@@ -33,6 +33,7 @@ void App::window_resize_event(int width, int height)
   Info_Print(std::to_string(width)+"x"+std::to_string(height));
 }
 
+
 static void mouse_cursor_callback(GLFWwindow* window, double xpos, double ypos)
 {
   App* app = static_cast<App *>(glfwGetWindowUserPointer(window));
@@ -55,11 +56,11 @@ void App::mouse_cursor_event(double xpos, double ypos)
     }                     
     diff = mousepos-lastmousepos;
     lastmousepos = mousepos;
-    if (rot)
+    if (rot and !(mov or scale))
     {
     rotationAxis = transpose(rotation) * vec4(-diff[1], diff[0], 0.0f, 1.0f);
     rotationAxis = normalize(rotationAxis);
-    rotationAngle = length(diff) * sensitivity;
+    rotationAngle = length(diff) * sensi_rot;
     rotation = rotate(rotation, radians(rotationAngle), rotationAxis);
     if (rotationAxis[0]!=rotationAxis[0]) {
       Warn_Print("NAN in rotationAxis vector computation for camera view");
@@ -68,15 +69,35 @@ void App::mouse_cursor_event(double xpos, double ypos)
     }
     if (mov)
     {
-      camerapos = camerapos + cameradist * 0.01f * sensitivity * vec3(transpose(rotation) * vec4(diff[0], diff[1], 0.0f, 1.0f));
+      camerapos = camerapos + (cameradist * sensi_mov) * vec3(transpose(rotation) *vec4(diff[0], diff[1], 0.0f, 1.0f));
+      // Vec3_Print("Camera position :", camerapos);
     }
     if (scale)
     {
-      Info_Print(std::to_string(length(diff)));
-      // Rajouter une var qui dit si on se rapproche de l'écran ou non
-      cameradist = cameradist + length(diff);
+      float d;
+      d = (diff[1]<0) ? sensi_scale * length(diff) :  -sensi_scale * length(diff);
+      Info_Print(std::to_string(d));
+      // CHoisir le signe en fonction du rapprochement avec le centre de l'écran(comme Blender)
+      cameradist = cameradist + d; 
     }
   }
+}
+
+static void mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+  App* app = static_cast<App *>(glfwGetWindowUserPointer(window));
+  if (app) {
+    app->mouse_scroll_event(yoffset);
+  } else {
+    Err_Print("Cannot get the app ptr during callback", "app.cpp");
+  }
+}
+void App::mouse_scroll_event(double yoffset)
+{
+  float d = float(yoffset);
+  Info_Print(std::to_string(sensi_scale * d));
+  // CHoisir le signe en fonction du rapprochement avec le centre de l'écran(comme Blender)
+  cameradist = cameradist + sensi_scale * d; 
 }
 
 
@@ -134,21 +155,22 @@ App::App() :
   Info_Print("Init GLFW window");
   glfwInit();
   // Choose GLSL version 
-  Info_Print("Choose glsl version");
+  Info_Print("Set GLSL version");
   const char* glsl_version = "#version 420";
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   // Create window with graphics context
-  Info_Print("Create window");
+  Info_Print("Create GLFW window");
   window = glfwCreateWindow(size_window*1280, size_window*720, "Simuscle", nullptr, nullptr);
   if (window == nullptr)
     Err_Print("Failed to launch GLFW window", "main.cpp");
     // return 1; //TODO
   glfwMakeContextCurrent(window);
   // Link callback function
-  Info_Print("Set callback function");
+  Info_Print("Set GLFW callback function");
   glfwSetWindowUserPointer(window, this);
   glfwSetFramebufferSizeCallback(window, window_size_callback);
+  glfwSetScrollCallback(window, mouse_scroll_callback);
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
 
@@ -272,7 +294,11 @@ App::App() :
   // view = glm::translate(view, cameraMov);
 
   frame = 0;
-  sensitivity = 0.1f;
+  sensitivity = 0.3f;
+  sensi_rot = 0.3f;
+  sensi_mov = 0.0007f;
+  sensi_scale = 1.f;
+
   firstMouse=true;
   projection = mat4(1.0f);
   view = mat4(1.0f);
@@ -442,20 +468,11 @@ void App::Run()
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Camera transform
-    // glm::mat4 view = glm::mat4(1.00f);
-    // view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
-    // view  = glm::rotate(view, float(frame)/1000*6.28f, glm::vec3(0.0f, 0.0f, 1.0f));
-    // Mat4_Print("Translated view matrix: ", view);
-    //view  = glm::rotate(view, glm::radians(rotationAngle), rotationAxis);
-    //Info_Print(std::to_string(rotationAngle));
-    //Info_Print(std::to_string(rotationAxis[0]));
-    //Info_Print(std::to_string(rotationAxis[1]));
-    //Info_Print(std::to_string(rotationAxis[2]));
-    //Mat4_Print("Translated and Rotated view matrix: ", view);
     view = mat4(1.0f);
     view = glm::translate(view, vec3(0.0f, 0.0f, -cameradist));
     view = view * rotation;
     view = translate(view, camerapos);
+    
     glm::mat4 vp_mat = projection * view;
 
     int modelLoc = glGetUniformLocation(shaderProgram, "vp_mat");
@@ -499,7 +516,6 @@ void App::Run()
 
     glUseProgram(shaderProgram);
     glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

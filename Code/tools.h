@@ -20,6 +20,7 @@ void Info_Print(std::string msg);
 void Warn_Print(std::string msg, bool ansi_color=true);
 void Err_Print(std::string msg, std::string file, bool ansi_color=true);
 void Mat4_Print(std::string msg, glm::mat4 mat, bool ansi_color=true);
+void Vec3_Print(std::string msg, glm::vec3 vec, bool ansi_color=true);
 
 // ImGui tools
 static void HelpMarker(const char* desc)

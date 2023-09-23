@@ -55,7 +55,13 @@ class App {
     // Callback functions
     void window_resize_event(int width, int height);
     void mouse_cursor_event(double xpos, double ypos);
+    void mouse_scroll_event(double yoffset);
     void mouse_button_event(int button, int action, int mods);
+
+    // Sensibility movement
+    float sensi_rot;
+    float sensi_mov;
+    float sensi_scale;
 
     void processInput(GLFWwindow *window);
 
@@ -84,18 +90,6 @@ class App {
     unsigned int vertexShader;
     unsigned int fragmendShader;
     unsigned int shaderProgram;
-
-    // class CallBackWrapper
-    // {
-    // public:
-    //     CallBackWrapper();
-
-    //     static void window_size_callback(GLFWwindow* window, int width, int height);
-    //     static void mouse_cursor_callback(GLFWwindow* window, double xpos, double ypos);
-    //     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-    // private:
-    //     static App* _application = this;
-    // };
 };
 
 
