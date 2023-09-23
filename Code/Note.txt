@@ -1,0 +1,28 @@
+## 12.09.23
+
+J'ai fais le viewport selon la doc de Dear ImGui. Les positions des pannels est sauvegardée dans le imgui.init. 
+Il faudra vérifier que le viewport se resize correctement, quand j'aurais un rendu plus avancée.
+Toutes les options des panneaux sont à faire, mais ca devrait être rapide à configurer d'un point de vu UI.
+
+Il faudra Mettre le viewport dans une fonction, ainsi que le menu au minimum. Il faudrait peutêtre penser à mettre tout ca dans des objets, de façons intelligente.
+Après je vois pas trop comment faire pour les UI, tous les objets malin sont dans la bibliotèque en fait...
+
+
+## 13.09.23
+
+J'essaye d'Afficher un triangle 2D avec OpenGL, et je me rends compte que c'est assez galère à comfigurer, à cause des extensions, des versions, etc.
+Avec GLAD, je crois que j'ai pu faire marcher tout ca. j'ai pu télécharger des extensions pour AMD, et un driver pour les radéon d'AMD.
+Il faudrait que je me renseigne dessus, et que je les installe ou utilise. Les extensions OpenGL que j'ai sont :
+- AMD_debug_output
+- AMD_draw_buffer_blend
+- AMD_gpu_shader_half_float
+- AMD_performance_monitor
+- AMD_shader_gpu_half_float_fetch
+Les noms mon fait penser que ca pourrait me servir un jour ou l'autre dans le projet...
+Sinon, c'est assez galère ces histoires de shader, je m'en sort pas vraiment ...
+
+Bon... j'ai pu faire marcher un copier coller d'un rectangle (wow tellement mieux qu'un triangle !!!).
+Mais il me semble que j'ai tout de même des problèmes de resizing. Il faudra bouger la caméra pour corriger le resize, ou je ne sais pas trop ...
+
+##
+

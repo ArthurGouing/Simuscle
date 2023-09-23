@@ -1,6 +1,7 @@
 # Nous voulons un cmake "récent" pour utiliser les dernières fonctionnalités
 cmake_minimum_required(VERSION 3.22.1)
-
+set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+set(CMAKE_C_COMPILER "/usr/bin/gcc")
 # Notre projet estim étiqueté hello
 project(Simuscle)
 
@@ -18,6 +19,7 @@ set(LIBS imgui GL glfw rt m dl)
 # Crée des variables avec les fichiers à compiler
 # set(SRCS main.cpp) # Utiliser file(GLOB RESCUE ...) plutot
 file(GLOB SRCS *.cpp)
+file(GLOB HEADERS glad.c *.cpp)
 
 # set(HEADERS ...) # Idem
 

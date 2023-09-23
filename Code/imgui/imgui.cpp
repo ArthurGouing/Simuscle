@@ -1280,7 +1280,7 @@ ImGuiIO::ImGuiIO()
     UserData = NULL;
 
     Fonts = NULL;
-    FontGlobalScale = 1.0f;
+    FontGlobalScale = 2.0f; // modified for my 4k screen Had to find a way to be a parameter (get imgui IO and change FonctGlobaleScale...) TODO
     FontDefault = NULL;
     FontAllowUserScaling = false;
     DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
