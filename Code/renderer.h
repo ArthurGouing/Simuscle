@@ -20,9 +20,11 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <set>
 
 // Files
-#include "../tools.h"
+#include "tools.h"
+#include "geometry.h"
 
 class Renderer {
   public:
@@ -33,8 +35,13 @@ class Renderer {
     // Init
     void Init();
 
+    // Inner class
+    Geometry * _geom;
+    void add_geom(Geometry *geom);
+
     // Render a new frame 
     void Draw();
+    unsigned int VAO, VBO, EBO;
 
     // update camera movement
     void update_cameradist(float dist);

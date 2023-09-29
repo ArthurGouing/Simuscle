@@ -24,5 +24,19 @@ Sinon, c'est assez galère ces histoires de shader, je m'en sort pas vraiment ..
 Bon... j'ai pu faire marcher un copier coller d'un rectangle (wow tellement mieux qu'un triangle !!!).
 Mais il me semble que j'ai tout de même des problèmes de resizing. Il faudra bouger la caméra pour corriger le resize, ou je ne sais pas trop ...
 
-##
+## 23.09.23
+
+Le resizing c'est bon maintenant, j'ai recopier les fonctions des projets ENSIMAG. J'ai pu mettre en place les commandes utilisateur.
+Elle pourront surement être optimizée avec la fonction LookAt d'OpenGL.
+Il faut maintenant que je load des géométries plus complexe, à partir du format .off. Et ensuite je verrai comment je peux réaliser un rendu
+avec les matcaps. Même si ce n'est pas le coeur du projet, ca ne devrait pas prendre trop de temps car tout est déjà fait dans les projet de l'ENSIMAG.
+Cependant, j'ai quelque doute sur le fait que je doit faire du lancer de rayon ou si le rasterizer suffit, 
+et comment obtenir les normals des vertex pour faire une interpollation des normales sur les faces de la géométries.
+
+## 25.09.23
+
+Bon, j'ai galérer à faire la class géométries car je voulais que les VAO soit dans la class geom et pas renderer.
+J'ai fait marcher tout ca mais il y a un problème logique sur comment ajouté une geométrie à rendre. 
+Il faudrait que le renderer render toutes les geométries qui lui sont donnée dans une liste, et cette liste pourrait être modifiée à souhait.
+Je pense que je devrait également szparer le GenBuff, du reste et le mettre dans l'initialisation de la geom/render.
 

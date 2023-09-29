@@ -28,12 +28,13 @@
 #include "imgui_impl_opengl3.h"
 #include "tools.h"
 #include "renderer.h"
+#include "geometry.h"
 
 
 class App {
   public:
     // Constructor
-    App(Renderer* renderer);
+    App(Renderer* renderer, Geometry* geom);
     // Init
     void Init();
     // Run
@@ -42,7 +43,8 @@ class App {
     ~App();
 
     // Inner Classs
-    Renderer* _renderer;
+    Renderer *_renderer;
+    Geometry *_geom;
 
     // App variable
     float size_window;

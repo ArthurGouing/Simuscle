@@ -137,8 +137,8 @@ void App::processInput(GLFWwindow *window)
 }
 
 // Constructor
-App::App(Renderer* renderer) :
-  _renderer(renderer),
+App::App(Renderer* renderer, Geometry* geom) :
+  _renderer(renderer), _geom(geom),
   size_window(1.7f), show_demo_window(true), show_another_window(false),  // GLFW variable
 
   sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(1.f),                  // Camera control variable
@@ -183,6 +183,10 @@ void App::Init()
   // Load extension's functions
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
+  /******** Geometry Init ********/
+  Title_Print("Init Geometry");
+  _renderer->add_geom(_geom);
+
   /******** Render Init *******/
   Title_Print("Init Renderer");
   _renderer->Init();
@@ -220,7 +224,7 @@ void App::Init()
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  // To get the 1st render strange...
+  // To get the 1st render window:
   window_resize_event(size_window*1280, size_window*720);
   Info_Print("initialisation Done");
 }
@@ -230,8 +234,6 @@ void App::Run()
 {
   Title_Print("Run");
   Info_Print("Running...");
-  std::cout << glfwWindowShouldClose(window) << std::endl;
-  std::cout << window << std::endl;
   while (!glfwWindowShouldClose(window))
   {
    // Input
