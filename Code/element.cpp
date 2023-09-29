@@ -7,24 +7,32 @@
 
 using namespace glm;
 
-Vertex::Vertex(int id, std::vector<vec3> *vert_values):
-  _id(id), _pos(&vert_values->at(id))
+Vertex::Vertex(int id, std::vector<vert_arr> *vert_values):
+  _id(id), _pos(&vert_values->at(id).pos), _normal(&vert_values->at(id).normal)
 {
+  Info_Print("Init vertex");
   std::cout << "  " << _pos << std::endl;
   // To cast to a float ptr, so we can access x, y and z
   // float *ptr = (float *)_pos;
 }
 Vertex::Vertex(Vertex* vert):
-  _id(vert->_id), _pos(vert->_pos), n_face_neighbor(0), _normal(vec3(0.0f))
+  _id(vert->_id), _pos(vert->_pos), n_face_neighbor(0), _normal(vert->_normal)
 {
   Info_Print("Constructeur par poiteur");
   //TODO:
 }
-void Vertex::compute_vert_normal(int face_id, vec3 face_normal)
+
+void Vertex::compute_vert_normal(std::vector<Triangle> *faces)
 {
-  // face id useless
-  _normal = float(n_face_neighbor+1) * _normal + face_normal/float(n_face_neighbor+1);
-  n_face_neighbor += 1;
+  Info_Print("Compute Normal");
+  Info_Print(std::to_string(n_face_neighbor)+ " face _face_neighbor");
+  for (int i = 0; i < n_face_neighbor; i++)
+  {
+    *_normal += faces->at(_face_neighbor[i]).get_normal();
+    // _normal += dot(v2-v1,v3-v1) * faces->at(i).get_normal();
+  }
+  *_normal = normalize(*_normal);
+  Vec3_Print("normal", *_normal);
 }
 
 

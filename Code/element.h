@@ -19,14 +19,22 @@
 // #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+namespace glm {
+  struct vert_arr {
+    vec3 pos;
+    vec3 normal;
+  };
+};
+
+class Triangle;
 
 class Vertex {
   public:
     //Constructer
-    Vertex(int id, std::vector<glm::vec3> *vert_values);
+    Vertex(int id, std::vector<glm::vert_arr> *vert_values);
     // Vertex(int id, float x, float y, float z);
     Vertex(Vertex* vert);
-    void compute_vert_normal(int face_id, glm::vec3 face_normal);
+    void compute_vert_normal(std::vector<Triangle> *faces);
     // Get
     glm::vec3 get_pos() {return glm::vec3(_pos->x, _pos->y, _pos->z);};
     // Variable
@@ -34,10 +42,11 @@ class Vertex {
     int n_vert_neighbor;
     int _id;
     glm::vec3 *_pos;
+    glm::vec3 *_normal;
+
+    std::vector<int> _face_neighbor;
+    std::vector<int> _vert_neighbor; // TODO: Pour l'instant inutile.
   private:
-    glm::vec3 _normal;
-    int* _face_neighbor;
-    int* _vert_neighbor; // TODO: Pour l'instant inutile.
 };
 
 class Triangle {

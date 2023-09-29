@@ -25,6 +25,8 @@
 
 // #include <glm/gtc/type_ptr.hpp>
 
+
+
 class Geometry {
   public:
 
@@ -41,7 +43,7 @@ class Geometry {
     int n_verts;
     int n_faces;
 
-    std::vector<glm::vec3> vert_value;
+    std::vector<glm::vert_arr> vert_values;
     std::vector<int>   face_indices;
 
     std::vector<Vertex>   vertex_list;

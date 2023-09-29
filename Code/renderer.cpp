@@ -90,6 +90,7 @@ void Renderer::Init()
     // };
     // // unsigned int VBO, VAO, EBO;
     Info_Print("set buff");
+    glEnable(GL_CULL_FACE);  
     _geom->set_Buffers();
     Info_Print("set buff");
     // glGenVertexArrays(1, &VAO);
@@ -133,11 +134,12 @@ void Renderer::Draw()
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 
     for (int i = 0; i < _geom->n_verts; i++) {
-      std::cout << "  vect " << _geom->vertex_list[i]._id << std::endl;
-      std::cout << (float *)_geom->vertex_list[i]._pos << std::endl; 
+      // std::cout << "  vect " << _geom->vertex_list[i]._id << std::endl;
+      // std::cout << (float *)_geom->vertex_list[i]._pos << std::endl; 
       // Vec3_Print( "", *_geom->vertex_list[i]._pos);
-      *_geom->vertex_list[i]._pos = *_geom->vertex_list[i]._pos + vec3(0.01f, 0.0f, 0.0f);
+      // *_geom->vertex_list[i]._pos = *_geom->vertex_list[i]._pos + vec3(0.01f, 0.0f, 0.0f);
       // _geom->vert_value[i] = _geom->vert_value[i] + vec3(0.01f, 0.0f, 0.0f);
+      Vec3_Print("Vertex"+std::to_string(i), _geom->vert_values[i].normal);
     }
     _geom->set_Buffers();
     
