@@ -24,13 +24,6 @@ void App::window_resize_event(int width, int height)
   // Update projection matrix;
   _renderer->update_projection(aspect);
   Info_Print(std::to_string(width)+"x"+std::to_string(height));
-
-  // Reset projection
-  // projection = mat4(1.0f);
-
-  // Set perspective projection
-  // projection = perspective(radians(fov), aspect, zNear, zFar);
-
 }
 
 
@@ -141,7 +134,7 @@ App::App(Renderer* renderer, Geometry* geom) :
   _renderer(renderer), _geom(geom),
   size_window(1.7f), show_demo_window(true), show_another_window(false),  // GLFW variable
 
-  sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(1.f),                  // Camera control variable
+  sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(0.5f),                  // Camera control variable
   camera_is_moving(false), rot(false), mov(false), scale(false),
   firstMouse(true)
 {

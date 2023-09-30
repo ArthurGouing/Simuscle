@@ -50,11 +50,12 @@ int main()
 
   // };
   Title_Print("Create Geometry from file");
-  Geometry square(&vertices, &indices);
-  // Geometry mesh("../Blender_scene/Human_triangulate.off");
+  // Geometry square(&vertices, &indices);
+  Geometry mesh("../Blender_scene/Human_triangulate.off");
+  // Geometry mesh("../Blender_scene/Sphere.off");
   Info_Print("Done");
   Renderer basic_render;
-  App Simuscle_app(&basic_render, &square);
+  App Simuscle_app(&basic_render, &mesh);
   Simuscle_app.Init();
 
   // Run the application

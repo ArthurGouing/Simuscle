@@ -72,15 +72,10 @@ class App {
   private:
     // mouse variable
     bool firstMouse;
-    // glm::vec2 diff;
     glm::vec2 _lastmousepos;
 
     // Camera projection matrix
-    // glm::mat4 projection;
-    // glm::mat4 view;
     glm::vec3 camera_translation;
-    // float cameradist;
-    // glm::mat4 rotation;
     bool camera_is_moving;
     bool rot;
     bool mov;

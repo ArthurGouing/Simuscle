@@ -23,6 +23,7 @@
 #include <set>
 
 // Files
+#include "stb_image.h"
 #include "tools.h"
 #include "geometry.h"
 
@@ -63,6 +64,10 @@ class Renderer {
     unsigned int shaderProgram;
 
     ImVec4 clear_color;
+
+    // Texture variable
+    int width, height, nrChannels;
+    unsigned int texture;
 };
 
 #endif // !RENDER_H

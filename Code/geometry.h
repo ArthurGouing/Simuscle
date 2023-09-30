@@ -34,7 +34,7 @@ class Geometry {
     Geometry(std::string file);
     ~Geometry();
 
-    void compute_vert_normal();
+    void compute_normals();
 
     void set_Buffers();
     void send_VBO();
