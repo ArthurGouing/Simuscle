@@ -43,7 +43,7 @@ void Renderer::Init()
   {
       glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
       Err_Print(infoLog, source_vert);
-      // return 1; //TODO
+      exit(1);
   }
 
   /******** Fragment shader ********/
@@ -65,7 +65,7 @@ void Renderer::Init()
   {
       glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
       Err_Print(infoLog, source_frag);
-      // return 1; //TODO
+      exit(1);
   }
 
   /******** Link shader ********/
@@ -79,7 +79,7 @@ void Renderer::Init()
   if (!success) {
     glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
     std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    // return 1; //TODO
+    exit(1);
   }
 
 
@@ -90,7 +90,7 @@ void Renderer::Init()
 
   /******** Load Texture *******/
   Info_Print("Load texture");
-  unsigned char *data = stbi_load("./mshade7.jpg", &width, &height, &nrChannels, 0); 
+  unsigned char *data = stbi_load("./mshade3.jpg", &width, &height, &nrChannels, 0); 
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -119,13 +119,15 @@ void Renderer::Draw()
     _view = translate(_view, _camerapos);
     
     _vpmat = _projection * _view;
+
+    // Send values to shaders
     int modelLoc = glGetUniformLocation(shaderProgram, "vp_mat");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(_vpmat));
-
-    Mat4_Print("rot matrix: ", _rotation);
-    Vec3_Print("camerapos: ", _camerapos);
-    Info_Print("cameradist: "+std::to_string(_cameradist));
-
+    int viewLoc = glGetUniformLocation(shaderProgram, "view");
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(_view));
+    // vec3 campos = _camerapos - vec3(_rotation * vec4(vec3(0.0f, 0.0f, -_cameradist), 0.0f));
+    // int camposLoc = glGetUniformLocation(shaderProgram, "campos");
+    // glUniform3fv(camposLoc, 1, glm::value_ptr(campos));
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 
