@@ -1,6 +1,7 @@
 #version 330 core
 in vec3 vNormal;
 in mat4 ourview;
+in vec3 Pos;
 out vec4 FragColor;
 
 uniform sampler2D MatcapTexture;

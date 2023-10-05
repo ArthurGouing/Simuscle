@@ -178,4 +178,14 @@ void Renderer::update_projection(float aspect)
   _projection = perspective(radians(fov), aspect, zNear, zFar);
 }
 
+void Renderer::reset_view()
+{
+  _rotation = mat4(0.61f, -0.215f, 0.7262f, 0.0f,
+      0.79f, 0.16f,  -0.589,  0.0f, 
+      0.0042f, 0.9632f, 0.268f, 0.0f,
+      0.0f, 0.0f, 0.0f, 1.0f);
+  _camerapos = vec3(0.0f, 0.0f, -1.0f);
+  _cameradist = 3.0f;
+}
+
 #endif // !RENDER_CPP

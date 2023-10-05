@@ -131,7 +131,7 @@ void App::processInput(GLFWwindow *window)
 
 // Constructor
 App::App(Renderer* renderer, Geometry* geom) :
-  _renderer(renderer), _geom(geom),
+  _renderer(renderer), _geom(geom), _timeline(),
   size_window(1.7f), show_demo_window(true), show_another_window(false),  // GLFW variable
 
   sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(0.5f),                  // Camera control variable
@@ -198,8 +198,7 @@ void App::Init()
   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
                                                             //io.ConfigViewportsNoAutoMerge = true;
                                                             //io.ConfigViewportsNoTaskBarIcon = true;
-
-                                                            // Setup Dear ImGui style
+  // Setup Dear ImGui style
   ImGui::StyleColorsDark();
 
   // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -340,25 +339,8 @@ void App::Run()
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     ImGui::ShowDemoWindow();
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    static float f = 0.0f;
-    static int counter = 0;
-
-    ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-    ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-    ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-    ImGui::Checkbox("Another Window", &show_another_window);
-
-    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-
-    if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-      counter++;
-    ImGui::SameLine();
-    ImGui::Text("counter = %d", counter);
-
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-    ImGui::End();
+    UI_control_pannel(io);
+    _timeline.UI_timeline();
 
     // Rendering
     ImGui::Render();
@@ -382,8 +364,6 @@ void App::Run()
 
 }
 
-
-
 App::~App()
 {
   // Cleanup
@@ -393,6 +373,24 @@ App::~App()
 
   glfwDestroyWindow(window);
   glfwTerminate();
+}
+
+void App::UI_control_pannel(ImGuiIO& io)
+{
+  ImGui::Begin("Camera control");                          // Create a window called "Hello, world!" and append into it.
+
+  ImGui::Text("Rotation sensitivity:");
+  ImGui::SliderFloat(" ", &sensi_rot, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+  ImGui::Text("Movement sensitivity:");
+  ImGui::SliderFloat("  ", &sensi_mov, 0.0f, 0.005f);            // Edit 1 float using a slider from 0.0f to 1.0f
+  ImGui::Text("Zoom sensitivity:");
+  ImGui::SliderFloat("   ", &sensi_scale, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+
+  if (ImGui::Button("Reset view"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+    _renderer->reset_view();
+
+  ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+  ImGui::End();
 }
 
 

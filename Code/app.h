@@ -28,6 +28,7 @@
 #include "imgui_impl_opengl3.h"
 #include "tools.h"
 #include "renderer.h"
+#include "timeline.h"
 #include "geometry.h"
 
 
@@ -45,6 +46,7 @@ class App {
     // Inner Classs
     Renderer *_renderer;
     Geometry *_geom;
+    Timeline _timeline;
 
     // App variable
     float size_window;
@@ -68,6 +70,7 @@ class App {
     float sensi_scale;
 
     void processInput(GLFWwindow *window);
+    void UI_control_pannel(ImGuiIO& io);
 
   private:
     // mouse variable

@@ -13,7 +13,7 @@ Après je vois pas trop comment faire pour les UI, tous les objets malin sont da
 J'essaye d'Afficher un triangle 2D avec OpenGL, et je me rends compte que c'est assez galère à comfigurer, à cause des extensions, des versions, etc.
 Avec GLAD, je crois que j'ai pu faire marcher tout ca. j'ai pu télécharger des extensions pour AMD, et un driver pour les radéon d'AMD.
 Il faudrait que je me renseigne dessus, et que je les installe ou utilise. Les extensions OpenGL que j'ai sont :
-- AMD_debug_output
+- AMD_debug_outputfalse
 - AMD_draw_buffer_blend
 - AMD_gpu_shader_half_float
 - AMD_performance_monitor
@@ -40,3 +40,12 @@ J'ai fait marcher tout ca mais il y a un problème logique sur comment ajouté u
 Il faudrait que le renderer render toutes les geométries qui lui sont donnée dans une liste, et cette liste pourrait être modifiée à souhait.
 Je pense que je devrait également szparer le GenBuff, du reste et le mettre dans l'initialisation de la geom/render.
 
+## 01.10.23
+
+J'ai tout de même pas trop mal avancée, je peux load les geometrie au format .off, et faire un rendu simple et efficace à base de matcaps.
+Evidemment, je ne vais pas implémenter les techniques plus avancée de matcap, je vais plutôt m'intérésser à l'implémentation de l'armature.
+Je devrait peut-être commencer par voir comment je peux faire l'UI. Je pense que la meilleur méthode est d'avoir 1 fonction UI dans chacune des classes.
+Je pourrais facilement modifiée les différents paramètres de chaque classe. Elle seront toutes rescencé dans 1 seul pannels.
+L'inconvéniant et que si je veux repenser l'UI, il faudra reorganiser tous le code. 
+Il faudra bien penser comment emboiter la TimeLine, Skin, Muscle, Bone et Rig avant de ce lancer.
+Et revoir comment gérer le rendu de plusieurs objets. (Faire un bilan sur les matcaps)

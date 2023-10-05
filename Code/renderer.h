@@ -50,6 +50,9 @@ class Renderer {
     void update_camerapos(glm::vec2 mouse_offset);
     void update_projection(float aspect);
 
+    // other
+    void reset_view();
+
   private:
     // Camera view variable
     float     zNear, zFar, fov;
