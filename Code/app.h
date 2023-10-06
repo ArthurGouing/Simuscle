@@ -83,6 +83,9 @@ class App {
     bool rot;
     bool mov;
     bool scale;
+    
+    // Test
+    float img_size;
 };
 
 

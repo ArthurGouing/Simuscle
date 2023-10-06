@@ -132,11 +132,12 @@ void App::processInput(GLFWwindow *window)
 // Constructor
 App::App(Renderer* renderer, Geometry* geom) :
   _renderer(renderer), _geom(geom), _timeline(),
-  size_window(1.7f), show_demo_window(true), show_another_window(false),  // GLFW variable
+  size_window(1.0f), show_demo_window(true), show_another_window(false),  // GLFW variable
 
   sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(0.5f),                  // Camera control variable
   camera_is_moving(false), rot(false), mov(false), scale(false),
-  firstMouse(true)
+  firstMouse(true),
+  img_size(1.0f)
 {
   Title_Print("Launch Simuscle App");
   Info_Print("Commit  : ******");
@@ -241,83 +242,76 @@ void App::Run()
     ImGui::NewFrame();
 
     // Viewports
-    bool b=true;
-    bool *p_open;
-    p_open = &b;
-    static bool opt_fullscreen = true;
-    static bool opt_padding = false;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    // bool b=true;
+    // bool *p_open;
+    // p_open = &b;
+    // static bool opt_fullscreen = true;
+    // static bool opt_padding = false;
+    // static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-    // because it would be confusing to have two docking targets within each others.
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    // // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+    // // because it would be confusing to have two docking targets within each others.
+    // ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    // const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    // ImGui::SetNextWindowPos(viewport->WorkPos);
+    // ImGui::SetNextWindowSize(viewport->WorkSize);
+    // ImGui::SetNextWindowViewport(viewport->ID);
+    // ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    // ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    // window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+    // window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-    // and handle the pass-thru hole, so we ask Begin() to not render a background.
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        window_flags |= ImGuiWindowFlags_NoBackground;
+    // // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+    // // and handle the pass-thru hole, so we ask Begin() to not render a background.
+    // if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+    //     window_flags |= ImGuiWindowFlags_NoBackground;
 
-    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-    // all active windows docked into it will lose their parent and become undocked.
-    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Viewport", p_open, window_flags);
-    ImGui::PopStyleVar();
-    ImGui::PopStyleVar(2);
+    // // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+    // // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+    // // all active windows docked into it will lose their parent and become undocked.
+    // // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+    // // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+    // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    // ImGui::Begin("Viewport", p_open, window_flags);
+    // ImGui::PopStyleVar();
+    // ImGui::PopStyleVar(2);
 
-    // Submit the DockSpace
+    // // Submit the DockSpace
+    // ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    // ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    // dockspace_flags = ImGuiDockNodeFlags_NoDockingInCentralNode | ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize;
+
     ImGuiIO& io = ImGui::GetIO();
-    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    dockspace_flags = ImGuiDockNodeFlags_NoDockingInCentralNode | ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize;
-
-    if (ImGui::BeginMenuBar())
+    if (ImGui::BeginMainMenuBar())
     {
       if (ImGui::BeginMenu("Options"))
       {
         // Disabling fullscreen would allow the window to be moved to the front of other windows,
         // which we can't undo at the moment without finer window depth/z control.
-        ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen);
+        bool opt_padding = true;
         ImGui::MenuItem("Padding", NULL, &opt_padding);
         ImGui::Separator();
-
-        if (ImGui::MenuItem("Flag: NoSplit",                "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))                 { dockspace_flags ^= ImGuiDockNodeFlags_NoSplit; }
-        if (ImGui::MenuItem("Flag: NoResize",               "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))                { dockspace_flags ^= ImGuiDockNodeFlags_NoResize; }
-        if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))  { dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode; }
-        if (ImGui::MenuItem("Flag: AutoHideTabBar",         "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))          { dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar; }
-        if (ImGui::MenuItem("Flag: PassthruCentralNode",    "", (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) != 0, opt_fullscreen)) { dockspace_flags ^= ImGuiDockNodeFlags_PassthruCentralNode; }
+        ImGui::Text("C'est le text du padding");
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Close", NULL, false, p_open != NULL))
-          *p_open = false;
         ImGui::EndMenu();
       }
       const char* desc =
-          "When docking is enabled, you can ALWAYS dock MOST window into another! Try it now!" "\n"
-          "- Drag from window title bar or their tab to dock/undock." "\n"
-          "- Drag from window menu button (upper-left button) to undock an entire node (all windows)." "\n"
-          "- Hold SHIFT to disable docking (if io.ConfigDockingWithShift == false, default)" "\n"
-          "- Hold SHIFT to enable docking (if io.ConfigDockingWithShift == true)" "\n"
-          "This demo app has nothing to do with enabling docking!" "\n\n"
-          "This demo app only demonstrate the use of ImGui::DockSpace() which allows you to manually create a docking node _within_ another window." "\n\n"
-          "Read comments in ShowExampleAppDockSpace() for more details.";
+        "When docking is enabled, you can ALWAYS dock MOST window into another! Try it now!" "\n"
+        "- Drag from window title bar or their tab to dock/undock." "\n"
+        "- Drag from window menu button (upper-left button) to undock an entire node (all windows)." "\n"
+        "- Hold SHIFT to disable docking (if io.ConfigDockingWithShift == false, default)" "\n"
+        "- Hold SHIFT to enable docking (if io.ConfigDockingWithShift == true)" "\n"
+        "This demo app has nothing to do with enabling docking!" "\n\n"
+        "This demo app only demonstrate the use of ImGui::DockSpace() which allows you to manually create a docking node _within_ another window." "\n\n"
+        "Read comments in ShowExampleAppDockSpace() for more details.";
       ImGui::TextDisabled("(?)");
       if (ImGui::BeginItemTooltip())
       {
-          ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-          ImGui::TextUnformatted(desc);
-          ImGui::PopTextWrapPos();
-          ImGui::EndTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
       }
       // HelpMarker(
       //     "When docking is enabled, you can ALWAYS dock MOST window into another! Try it now!" "\n"
@@ -329,10 +323,20 @@ void App::Run()
       //     "This demo app only demonstrate the use of ImGui::DockSpace() which allows you to manually create a docking node _within_ another window." "\n\n"
       //     "Read comments in ShowExampleAppDockSpace() for more details.");
 
-      ImGui::EndMenuBar();
-
+      ImGui::EndMainMenuBar();
     }
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
+    bool p_open = true;
+    ImGuiWindowFlags window_flags = 0;
+    window_flags |= ImGuiWindowFlags_NoTitleBar;
+    ImGui::Begin("Viewport", &p_open, window_flags);
+    ImGui::SliderFloat("Image size", &img_size, 0.0f, 2.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+    //if (ImGui::Button("Simulate"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+    //  Info_Print("Compute simulation");
+    //  // add a progress bar somewhere...
+    unsigned int FrameBufferID = _renderer->textureColorbuffer;
+    ImGui::Image((void *) FrameBufferID, ImVec2(img_size*1280, img_size*720));
     ImGui::End();
 
 
@@ -385,6 +389,17 @@ void App::UI_control_pannel(ImGuiIO& io)
   ImGui::SliderFloat("  ", &sensi_mov, 0.0f, 0.005f);            // Edit 1 float using a slider from 0.0f to 1.0f
   ImGui::Text("Zoom sensitivity:");
   ImGui::SliderFloat("   ", &sensi_scale, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+  ImGui::Separator();
+  std::string msg;
+  for (int i = 0; i<4*4; i++) {
+    msg+= std::to_string(_renderer->_rotation[i%4][i/4]) + " ";
+    if (i%4==3) {
+      msg+= "\n ";
+    }
+  }
+  char* char_array = new char[msg.length() + 1]; 
+  strcpy(char_array, msg.c_str()); 
+  ImGui::Text(msg.c_str());
 
   if (ImGui::Button("Reset view"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
     _renderer->reset_view();

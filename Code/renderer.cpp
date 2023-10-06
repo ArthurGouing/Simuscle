@@ -17,7 +17,8 @@ Renderer::Renderer():
 
 Renderer::~Renderer()
 {
-
+  glDeleteRenderbuffers(1, &rbo);
+  glDeleteFramebuffers(1, &framebuffer);
 }
 
 void Renderer::Init()
@@ -88,6 +89,31 @@ void Renderer::Init()
   _geom->set_Buffers();
   Info_Print("set buff");
 
+  /******** framebuffer configuration ********/
+  Info_Print("Create Framebuffer");
+  // create framebuffer
+  glGenFramebuffers(1, &framebuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+  // create a color attachment texture
+  glGenTextures(1, &textureColorbuffer);
+  glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, int(1280), int(720), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+  // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
+  glGenRenderbuffers(1, &rbo);
+  glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, int(1280*1.7), int(1.7*720)); // use a single renderbuffer object for both a depth AND stencil buffer.
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+  // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  std::cout << "framebuffer id:" << framebuffer << std::endl; 
+  std::cout << "matcap text id:" << texture << std::endl; 
+
   /******** Load Texture *******/
   Info_Print("Load texture");
   unsigned char *data = stbi_load("./mshade3.jpg", &width, &height, &nrChannels, 0); 
@@ -95,6 +121,13 @@ void Renderer::Init()
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
   glGenerateMipmap(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // send texture to shaders
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glUniform1i(glGetUniformLocation(fragmentShader, "MatcapTexture"), 0);
+
 
   /******** Cleaning ********/
   Info_Print("Cleaning");
@@ -108,6 +141,10 @@ void Renderer::Init()
 
 void Renderer::Draw()
 {
+    // Framebuffer 
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glEnable(GL_DEPTH_TEST);
+
     // Background color
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
@@ -144,6 +181,8 @@ void Renderer::Draw()
     // }
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
     glDrawElements(GL_TRIANGLES, 3 * _geom->n_faces, GL_UNSIGNED_INT, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // = unbind framebuffer
 }
 
 void Renderer::add_geom(Geometry *new_geom)

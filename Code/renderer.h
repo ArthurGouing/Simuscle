@@ -53,11 +53,17 @@ class Renderer {
     // other
     void reset_view();
 
+    // to go private ??
+    glm::mat4 _rotation;
+    // Framebuffer variable
+    unsigned int framebuffer;
+    unsigned int textureColorbuffer;
+    unsigned int rbo;
+    unsigned int texture;
   private:
     // Camera view variable
     float     zNear, zFar, fov;
     glm::mat4 _vpmat, _view, _projection;
-    glm::mat4 _rotation;
     glm::vec3 _camerapos;
     float     _cameradist;
 
@@ -70,7 +76,7 @@ class Renderer {
 
     // Texture variable
     int width, height, nrChannels;
-    unsigned int texture;
+
 };
 
 #endif // !RENDER_H
