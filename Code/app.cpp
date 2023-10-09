@@ -23,7 +23,7 @@ void App::window_resize_event(int width, int height)
 
   // Update projection matrix;
   _renderer->update_projection(aspect);
-  Info_Print(std::to_string(width)+"x"+std::to_string(height));
+  // Info_Print(std::to_string(width)+"x"+std::to_string(height));
 }
 
 
@@ -31,14 +31,14 @@ static void mouse_cursor_callback(GLFWwindow* window, double xpos, double ypos)
 {
   App* app = static_cast<App *>(glfwGetWindowUserPointer(window));
   if (app) {
-    app->mouse_cursor_event(xpos, ypos);
+    app->mouse_cursor_event(xpos, -ypos);
   } else {
     Err_Print("Cannot get the app ptr during callback", "app.cpp");
   }
 }
 void App::mouse_cursor_event(double xpos, double ypos)
 {
-  if (camera_is_moving)
+  if (camera_is_moving and mouse_on_viewport)
   {
     vec2 mousepos = vec2(float(xpos), float(-ypos));
 
@@ -81,8 +81,10 @@ static void mouse_scroll_callback(GLFWwindow* window, double xoffset, double yof
 }
 void App::mouse_scroll_event(double yoffset)
 {
-  float dist = sensi_scale * float(-yoffset);
-  _renderer->update_cameradist(dist);
+  if (mouse_on_viewport) {
+    float dist = sensi_scale * float(-yoffset);
+    _renderer->update_cameradist(dist);
+  }
 }
 
 
@@ -132,12 +134,12 @@ void App::processInput(GLFWwindow *window)
 // Constructor
 App::App(Renderer* renderer, Geometry* geom) :
   _renderer(renderer), _geom(geom), _timeline(),
-  size_window(1.0f), show_demo_window(true), show_another_window(false),  // GLFW variable
+  size_window(1.7f), show_demo_window(true), show_another_window(false),  // GLFW variable
 
   sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(0.5f),                  // Camera control variable
-  camera_is_moving(false), rot(false), mov(false), scale(false),
+  mouse_on_viewport(false), camera_is_moving(false), rot(false), mov(false), scale(false),
   firstMouse(true),
-  img_size(1.0f)
+  img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f))
 {
   Title_Print("Launch Simuscle App");
   Info_Print("Commit  : ******");
@@ -168,7 +170,7 @@ void App::Init()
   glfwMakeContextCurrent(window);
   // Link callback function
   glfwSetWindowUserPointer(window, this);
-  glfwSetFramebufferSizeCallback(window, window_size_callback);
+  // glfwSetFramebufferSizeCallback(window, window_size_callback);
   glfwSetScrollCallback(window, mouse_scroll_callback);
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -183,7 +185,7 @@ void App::Init()
 
   /******** Render Init *******/
   Title_Print("Init Renderer");
-  _renderer->Init();
+  _renderer->Init(int(pannel_size.x), int(pannel_size.y));
 
   /******** Init ImGUI ********/
   Title_Print("Init ImGUI");
@@ -218,7 +220,7 @@ void App::Init()
   ImGui_ImplOpenGL3_Init(glsl_version);
 
   // To get the 1st render window:
-  window_resize_event(size_window*1280, size_window*720);
+  window_resize_event(1280, 720);
   Info_Print("initialisation Done");
 }
 
@@ -330,13 +332,22 @@ void App::Run()
     bool p_open = true;
     ImGuiWindowFlags window_flags = 0;
     window_flags |= ImGuiWindowFlags_NoTitleBar;
+
+    /********* Viewport ********/ 
     ImGui::Begin("Viewport", &p_open, window_flags);
-    ImGui::SliderFloat("Image size", &img_size, 0.0f, 2.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-    //if (ImGui::Button("Simulate"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-    //  Info_Print("Compute simulation");
-    //  // add a progress bar somewhere...
+    mouse_on_viewport = ImGui::IsWindowHovered();
+    // resize_fbo
+    ImVec2 vp_size = ImGui::GetContentRegionAvail();
+    if (vp_size.x != pannel_size.x or vp_size.y != pannel_size.y)
+    {
+      Info_Print("Resize viewport to the new value: "+std::to_string(int(vp_size.x))+"x"+std::to_string(int(vp_size.y)));
+      _renderer->resize_fbo(vp_size.x, vp_size.y);
+      window_resize_event(int(vp_size.x), int(vp_size.y));
+      pannel_size.x = vp_size.x;
+      pannel_size.y = vp_size.y;
+    }
     unsigned int FrameBufferID = _renderer->textureColorbuffer;
-    ImGui::Image((void *) FrameBufferID, ImVec2(img_size*1280, img_size*720));
+    ImGui::Image((void *) FrameBufferID, ImVec2(pannel_size.x, pannel_size.y));
     ImGui::End();
 
 

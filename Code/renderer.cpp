@@ -8,10 +8,10 @@ using namespace glm;
 Renderer::Renderer():
   zNear(0.1f), zFar(1500.0), fov(45.0),
   _cameradist(3.0f), _camerapos(vec3(0.0f, 0.0f, -1.0f)), 
-  _rotation(mat4(0.61f, -0.215f, 0.7262f, 0.0f,
-                 0.79f, 0.16f,  -0.589,  0.0f, 
-                 0.0042f, 0.9632f, 0.268f, 0.0f,
-                 0.0f, 0.0f, 0.0f, 1.0f))
+  _rotation(mat4(-0.71f, -0.03f,  -0.65f, 0.0f,
+                  0.64f, -0.025f, -0.75f, 0.0f,
+                  0.02f, -0.99f,   0.04f, 0.0f,
+                  0.0f,   0.0f ,   0.0f, 1.0f))
 {
 }
 
@@ -21,7 +21,7 @@ Renderer::~Renderer()
   glDeleteFramebuffers(1, &framebuffer);
 }
 
-void Renderer::Init()
+void Renderer::Init(int width, int height)
 {
   /******** Vertex shader ********/
   Info_Print("Compile vertex shader");
@@ -87,55 +87,46 @@ void Renderer::Init()
   // glEnable(GL_CULL_FACE);  
   glEnable(GL_DEPTH_TEST);
   _geom->set_Buffers();
-  Info_Print("set buff");
+  Info_Print("set Vert Buff");
 
   /******** framebuffer configuration ********/
   Info_Print("Create Framebuffer");
-  // create framebuffer
-  glGenFramebuffers(1, &framebuffer);
-  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-  // create a color attachment texture
-  glGenTextures(1, &textureColorbuffer);
-  glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, int(1280), int(720), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
-  // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
-  glGenRenderbuffers(1, &rbo);
-  glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, int(1280*1.7), int(1.7*720)); // use a single renderbuffer object for both a depth AND stencil buffer.
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
-  // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-      std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  std::cout << "framebuffer id:" << framebuffer << std::endl; 
-  std::cout << "matcap text id:" << texture << std::endl; 
+  resize_fbo(width, height);
 
   /******** Load Texture *******/
   Info_Print("Load texture");
-  unsigned char *data = stbi_load("./mshade3.jpg", &width, &height, &nrChannels, 0); 
   glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-  glGenerateMipmap(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, 0);
-
-  // send texture to shaders
+  glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+                                         // set the texture wrapping parameters
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  // set texture filtering parameters
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // load image, create texture and generate mipmaps
+  // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+  unsigned char *data = stbi_load("./mshade3.jpg", &width, &height, &nrChannels, 0); 
+  if (data)
+  {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  }
+  else
+  {
+    std::cout << "Failed to load texture" << std::endl;
+  }
+  stbi_image_free(data);
+  // send texture to shader
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindTexture(GL_TEXTURE_2D, 2);
   glUniform1i(glGetUniformLocation(fragmentShader, "MatcapTexture"), 0);
-
 
   /******** Cleaning ********/
   Info_Print("Cleaning");
   vertexShaderFile.close();
   fragShaderFile.close();
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
-  stbi_image_free(data);
+  // glDeleteShader(vertexShader);
+  // glDeleteShader(fragmentShader);
   Info_Print("Done");
 }
 
@@ -183,6 +174,43 @@ void Renderer::Draw()
     glDrawElements(GL_TRIANGLES, 3 * _geom->n_faces, GL_UNSIGNED_INT, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // = unbind framebuffer
+}
+
+void Renderer::resize_fbo(int width, int height)
+{
+  // Delete FBO
+  if (framebuffer) 
+  {
+    glDeleteFramebuffers(1, &framebuffer);
+    glDeleteTextures(1, &textureColorbuffer);
+    glDeleteRenderbuffers(1, &rbo);
+  }
+  // create framebuffer
+  glGenFramebuffers(1, &framebuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+  // create a color attachment texture
+  glGenTextures(1, &textureColorbuffer);
+  glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+  // Create depth
+
+  // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
+  glGenRenderbuffers(1, &rbo);
+  glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height); // use a single renderbuffer object for both a depth AND stencil buffer.
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+  // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+      std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+  glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind fbo
+
+  // Say which texture had to go to shader
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, 2);
+  glUniform1i(glGetUniformLocation(fragmentShader, "MatcapTexture"), 0);
 }
 
 void Renderer::add_geom(Geometry *new_geom)

@@ -79,6 +79,7 @@ class App {
 
     // Camera projection matrix
     glm::vec3 camera_translation;
+    bool mouse_on_viewport;
     bool camera_is_moving;
     bool rot;
     bool mov;
@@ -86,6 +87,7 @@ class App {
     
     // Test
     float img_size;
+    glm::vec2 pannel_size;
 };
 
 

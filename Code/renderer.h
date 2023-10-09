@@ -34,7 +34,7 @@ class Renderer {
     ~Renderer();
 
     // Init
-    void Init();
+    void Init(int width, int height);
 
     // Inner class
     Geometry * _geom;
@@ -43,6 +43,9 @@ class Renderer {
     // Render a new frame 
     void Draw();
     unsigned int VAO, VBO, EBO;
+
+    // methode
+    void resize_fbo(int width, int height);
 
     // update camera movement
     void update_cameradist(float dist);
@@ -69,7 +72,7 @@ class Renderer {
 
     // Shader ids
     unsigned int vertexShader;
-    unsigned int fragmendShader;
+    unsigned int fragmentShader;
     unsigned int shaderProgram;
 
     ImVec4 clear_color;
