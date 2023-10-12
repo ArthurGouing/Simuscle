@@ -5,6 +5,9 @@
 
 using namespace glm;
 
+Geometry::Geometry()
+{}
+
 Geometry::Geometry(std::string file)
 {
   // Init
@@ -15,7 +18,7 @@ Geometry::Geometry(std::string file)
   Vertex *v1, *v2, *v3;
   // Open file
   if (!geom_file.is_open())
-    Err_Print("Cannont open "+file, "geometry.cpp");
+    Err_Print("Cannot open "+file, "geometry.cpp");
   geom_file >> buff; std::cout << "Read geometry from " << buff <<" format" << std::endl;
   std::getline(geom_file, buff);
   std::getline(geom_file, buff);

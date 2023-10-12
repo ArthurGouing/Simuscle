@@ -23,26 +23,27 @@
 #include <set>
 
 // Files
+#include "skeleton.h"
 #include "stb_image.h"
 #include "tools.h"
-#include "geometry.h"
 
 class Renderer {
   public:
     // Constructeur
-    Renderer();
+    Renderer(Skeleton *skeleton);
     ~Renderer();
 
     // Init
     void Init(int width, int height);
 
     // Inner class
-    Geometry * _geom;
-    void add_geom(Geometry *geom);
+    Skeleton * _skel;
+    // MuscleSystem *_musclesys;
+    // Skin         *_char;
 
     // Render a new frame 
     void Draw();
-    unsigned int VAO, VBO, EBO;
+    void UI_pannel();
 
     // methode
     void resize_fbo(int width, int height);
@@ -76,6 +77,11 @@ class Renderer {
     unsigned int shaderProgram;
 
     ImVec4 clear_color;
+
+    // Render mode
+    std::string skel_mode; // choice: ["stick", "wire", "mesh]
+    // std::string muscle_mode;
+    // std::string skin_mode;
 
     // Texture variable
     int width, height, nrChannels;

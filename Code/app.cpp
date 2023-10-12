@@ -132,16 +132,16 @@ void App::processInput(GLFWwindow *window)
 }
 
 // Constructor
-App::App(Renderer* renderer, Geometry* geom) :
-  _renderer(renderer), _geom(geom), _timeline(),
-  size_window(1.7f), show_demo_window(true), show_another_window(false),  // GLFW variable
+App::App(Renderer* renderer) :
+  _renderer(renderer), /*_simulator(),*/ _timeline(),
+  size_window(1.7f), show_demo_window(true),  // GLFW variable
 
   sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(0.5f),                  // Camera control variable
   mouse_on_viewport(false), camera_is_moving(false), rot(false), mov(false), scale(false),
   firstMouse(true),
   img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f))
 {
-  Title_Print("Launch Simuscle App");
+  Title_Print("Launch Simuscle App (with skeleton)");
   Info_Print("Commit  : ******");
   Info_Print("Modif   : 23/09/23");
   Info_Print("Version : 0.0.0");
@@ -161,9 +161,9 @@ void App::Init()
   // Create window with graphics context
   Info_Print("Create GLFW window");
   window = glfwCreateWindow(size_window*1280, size_window*720, "Simuscle", nullptr, nullptr);
-  // if (window == nullptr)
-  //   Err_Print("Failed to launch GLFW window", "main.cpp");
-  //    // return 1; //TODO
+  if (window == nullptr)
+    Err_Print("Failed to launch GLFW window", "main.cpp");
+    exit(1);
 
   // Parameters
   Info_Print("Set GLFW parameters");
@@ -180,8 +180,6 @@ void App::Init()
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
   /******** Geometry Init ********/
-  Title_Print("Init Geometry");
-  _renderer->add_geom(_geom);
 
   /******** Render Init *******/
   Title_Print("Init Renderer");
@@ -221,7 +219,7 @@ void App::Init()
 
   // To get the 1st render window:
   window_resize_event(1280, 720);
-  Info_Print("initialisation Done");
+  Info_Print("Initialisation Done");
 }
 
 
@@ -329,11 +327,10 @@ void App::Run()
     }
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
+    /********* Viewport ********/ 
     bool p_open = true;
     ImGuiWindowFlags window_flags = 0;
     window_flags |= ImGuiWindowFlags_NoTitleBar;
-
-    /********* Viewport ********/ 
     ImGui::Begin("Viewport", &p_open, window_flags);
     mouse_on_viewport = ImGui::IsWindowHovered();
     // resize_fbo
@@ -351,17 +348,18 @@ void App::Run()
     ImGui::End();
 
 
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+    /********* UI Pannels ********/
     ImGui::ShowDemoWindow();
-
     UI_control_pannel(io);
-    _timeline.UI_timeline();
+    _timeline.UI_pannel();
+    _renderer->UI_pannel();
 
-    // Rendering
+    /******** Rendering ********/
     ImGui::Render();
     _renderer->Draw();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+    /******** ??????? ********/
     // Update and Render additional Platform Windows
     // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
     //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
@@ -374,20 +372,10 @@ void App::Run()
       glfwMakeContextCurrent(backup_current_context);
     }
 
+    /******** Swat Buffers ********/
     glfwSwapBuffers(window);
   }
 
-}
-
-App::~App()
-{
-  // Cleanup
-  ImGui_ImplOpenGL3_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
-  ImGui::DestroyContext();
-
-  glfwDestroyWindow(window);
-  glfwTerminate();
 }
 
 void App::UI_control_pannel(ImGuiIO& io)
@@ -419,7 +407,14 @@ void App::UI_control_pannel(ImGuiIO& io)
   ImGui::End();
 }
 
+App::~App()
+{
+  // Cleanup
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
 
-
-
+  glfwDestroyWindow(window);
+  glfwTerminate();
+}
 #endif // !APP_CPP

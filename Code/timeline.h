@@ -23,7 +23,7 @@ class Timeline
     bool is_paused;
 
     // User interface 
-    void UI_timeline();
+    void UI_pannel();
 
   private:
     // Variable

@@ -35,7 +35,7 @@
 class App {
   public:
     // Constructor
-    App(Renderer* renderer, Geometry* geom);
+    App(Renderer* renderer);
     // Init
     void Init();
     // Run
@@ -44,16 +44,13 @@ class App {
     ~App();
 
     // Inner Classs
-    Renderer *_renderer;
-    Geometry *_geom;
-    Timeline _timeline;
+    Renderer         *_renderer;
+    Timeline          _timeline;
+    // SimulationManager _simulator;
 
-    // App variable
-    float size_window;
-    float deltaTime;
-    float lastFrame;
+    // App variable 
+    float size_window; // TODO: SUPPR
     bool show_demo_window;
-    bool show_another_window;
 
     // window
     GLFWwindow* window;
@@ -70,6 +67,8 @@ class App {
     float sensi_scale;
 
     void processInput(GLFWwindow *window);
+    
+    // UI Element
     void UI_control_pannel(ImGuiIO& io);
 
   private:
@@ -84,11 +83,9 @@ class App {
     bool rot;
     bool mov;
     bool scale;
-    
+
     // Test
     float img_size;
     glm::vec2 pannel_size;
 };
-
-
 #endif // !APP_H

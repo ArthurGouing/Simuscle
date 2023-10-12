@@ -5,7 +5,8 @@
 
 using namespace glm;
 
-Renderer::Renderer():
+Renderer::Renderer(Skeleton *skeleton):
+  _skel(skeleton), skel_mode("wire"),
   zNear(0.1f), zFar(1500.0), fov(45.0),
   _cameradist(3.0f), _camerapos(vec3(0.0f, 0.0f, -1.0f)), 
   _rotation(mat4(-0.71f, -0.03f,  -0.65f, 0.0f,
@@ -86,7 +87,7 @@ void Renderer::Init(int width, int height)
 
   // glEnable(GL_CULL_FACE);  
   glEnable(GL_DEPTH_TEST);
-  _geom->set_Buffers();
+  // _skel->alloc_buff(); //TODO:
   Info_Print("set Vert Buff");
 
   /******** framebuffer configuration ********/
@@ -153,26 +154,23 @@ void Renderer::Draw()
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(_vpmat));
     int viewLoc = glGetUniformLocation(shaderProgram, "view");
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(_view));
-    // vec3 campos = _camerapos - vec3(_rotation * vec4(vec3(0.0f, 0.0f, -_cameradist), 0.0f));
-    // int camposLoc = glGetUniformLocation(shaderProgram, "campos");
-    // glUniform3fv(camposLoc, 1, glm::value_ptr(campos));
 
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-
-    _geom->set_Buffers();
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
+    // Draw Skeleton
     glUseProgram(shaderProgram);
-    glBindVertexArray(_geom->VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-    // if (is_wireframe) {
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
-    // } else {
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL).
-    // }
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Wireframe mode
-    glDrawElements(GL_TRIANGLES, 3 * _geom->n_faces, GL_UNSIGNED_INT, 0);
+    if (skel_mode=="stick") {
+      _skel->draw_skeleton_wire(); // replace set_buff + draw
+    } else if (skel_mode=="mesh") {
+      _skel->draw_skeleton_mesh();
+    } else if (skel_mode=="wire") {
+      _skel->draw_skeleton_mesh(true);
+    } else {
+      Info_Print("Default case: the skeleton won't be draw");
+    }
 
+    // Do the same for the skin and the muscles
+ 
+    // UnBind
+    glBindBuffer(GL_ARRAY_BUFFER, 0); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // = unbind framebuffer
 }
 
@@ -213,12 +211,6 @@ void Renderer::resize_fbo(int width, int height)
   glUniform1i(glGetUniformLocation(fragmentShader, "MatcapTexture"), 0);
 }
 
-void Renderer::add_geom(Geometry *new_geom)
-{
-  _geom = new_geom;
-  Info_Print("n_vert of square in renderer: "+std::to_string(_geom->n_verts));
-}
-
 void Renderer::update_rotation(vec2 mouse_offset, float angle)
 {
   // Add a rotation of the angle rotationAngle from the axis rotationAxis to rotation, the transformation matrix
@@ -253,6 +245,12 @@ void Renderer::reset_view()
       0.0f, 0.0f, 0.0f, 1.0f);
   _camerapos = vec3(0.0f, 0.0f, -1.0f);
   _cameradist = 3.0f;
+}
+
+void Renderer::UI_pannel()
+{
+  ImGui::Begin("Render Settings");
+  ImGui::End();
 }
 
 #endif // !RENDER_CPP

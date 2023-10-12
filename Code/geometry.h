@@ -32,6 +32,7 @@ class Geometry {
 
     Geometry(std::vector<float> *vertices, std::vector<int> *indices);
     Geometry(std::string file);
+    Geometry();
     ~Geometry();
 
     void compute_normals();

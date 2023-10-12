@@ -43,7 +43,7 @@ void Timeline::goto_frame(int frame)
 }
 
 
-void Timeline::UI_timeline()
+void Timeline::UI_pannel()
 {
   ImGui::Begin("Timeline");
   ImGui::DragInt("Frame", &_frame, 1, _first_frame, _last_frame-1);
