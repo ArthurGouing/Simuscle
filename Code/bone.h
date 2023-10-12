@@ -18,8 +18,21 @@
 #include "tools.h"
 #include "geometry.h"
 
+class AnimCurve
+{
+  public:
+    AnimCurve()  {};
+    ~AnimCurve() {_values.clear();};
 
-enum RotateOrder {roXYZ=0, roYZX, roZXY, roXZY, roYXZ, roZYX};
+    double get_values(int frame)  {/*TODO*/};
+    double get_values(float time) {/*TODO*/};
+  public:
+    std::string name; // Name of the dof
+    std::vector<double> _values; // values for all the frames
+
+};
+
+enum RotateOrder {roXYZ=123, roYZX=312, roZXY=231, roXZY=132, roYXZ=213, roZYX=321};
 
 class Bone // = The joint class in SIA Project
 {
@@ -41,24 +54,24 @@ class Bone // = The joint class in SIA Project
     void print_bone(int level=0);
 
 
-   private:
     std::string _name;
+   private:
     Geometry _mesh;
     glm::vec3 _offset; // peut etre en vec4 pour pouvoir faire les transform
     glm::vec3 _translation;
     glm::vec3 _rotation;
-    int _rorder;
+    RotateOrder _rorder;
 
-    std::vector<Bone*> _childrens;
-    int nb_frames; // a mettre dans timeline plutot
-    int frame_time;// a mettre dans timeline plutot
+    std::vector<Bone> _childrens;
+    int _nb_frames; // a mettre dans timeline plutot
+    int _frame_time;// a mettre dans timeline plutot
 
-    glm::mat4 transformation;
-    glm::mat4 trans_only_rot;
-    glm::vec3 translation_2;
-    glm::vec3 offset_2;
+    // glm::mat4 transformation;
+    // glm::mat4 trans_only_rot;
+    // glm::vec3 translation_2;
+    // glm::vec3 offset_2;
 
-    // AnimCurve dof; // Class which Store the value of all the frame, and compute the value at the interframe.
+    std::vector<AnimCurve> _dofs; // Class which Store the value of all the frame, and compute the value at the interframe.
 };
 
 #endif // !BONE_H
