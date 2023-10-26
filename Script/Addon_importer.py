@@ -1,28 +1,31 @@
 import bpy
 
 
-def write_some_data(context, filepath, use_some_setting):
-    print("running write_some_data...")
-    f = open(filepath, 'w', encoding='utf-8')
-    f.write("Hello World %s" % use_some_setting)
+def read_some_data(context, filepath, use_some_setting):
+    print("running read_some_data...")
+    f = open(filepath, 'r', encoding='utf-8')
+    data = f.read()
     f.close()
+
+    # would normally load the data here
+    print(data)
 
     return {'FINISHED'}
 
 
-# ExportHelper is a helper class, defines filename and
+# ImportHelper is a helper class, defines filename and
 # invoke() function which calls the file selector.
-from bpy_extras.io_utils import ExportHelper
+from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
 
-class ExportSomeData(Operator, ExportHelper):
+class ImportSomeData(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "export_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
-    bl_label = "Export Some Data"
+    bl_idname = "import_test.some_data"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_label = "Import Some Data"
 
-    # ExportHelper mixin class uses this
+    # ImportHelper mixin class uses this
     filename_ext = ".txt"
 
     filter_glob: StringProperty(
@@ -50,27 +53,27 @@ class ExportSomeData(Operator, ExportHelper):
     )
 
     def execute(self, context):
-        return write_some_data(context, self.filepath, self.use_setting)
+        return read_some_data(context, self.filepath, self.use_setting)
 
 
-# Only needed if you want to add into a dynamic menu
-def menu_func_export(self, context):
-    self.layout.operator(ExportSomeData.bl_idname, text="Text Export Operator (.txt)")
+# Only needed if you want to add into a dynamic menu.
+def menu_func_import(self, context):
+    self.layout.operator(ImportSomeData.bl_idname, text="Text Import Operator")
 
 
-# Register and add to the "file selector" menu (required to use F3 search "Text Export Operator" for quick access).
+# Register and add to the "file selector" menu (required to use F3 search "Text Import Operator" for quick access).
 def register():
-    bpy.utils.register_class(ExportSomeData)
-    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+    bpy.utils.register_class(ImportSomeData)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 
 def unregister():
-    bpy.utils.unregister_class(ExportSomeData)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+    bpy.utils.unregister_class(ImportSomeData)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
 
 
 if __name__ == "__main__":
     register()
 
     # test call
-    bpy.ops.export_test.some_data('INVOKE_DEFAULT')
+    bpy.ops.import_test.some_data('INVOKE_DEFAULT')
