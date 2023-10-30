@@ -6,13 +6,15 @@ from bpy.app.translations import contexts as i18n_contexts
 
 # Your custom menu
 class VIEW3D_MT_simuscle(Menu):
-    bl_label = "My menu"
+    bl_label = "Simuscle"
+    bl_idname= "VIEW3D_MT_simuscle"
     
     def draw(self, _context):
         layout = self.layout
         
         layout.operator("object.shade_smooth")
         layout.label(text="Hello world!")
+        layout.operator("object.add_muscle")
 
 # Recreate the whole menu bar
 class VIEW3D_MT_editor_menus(Menu):
@@ -106,7 +108,6 @@ class VIEW3D_MT_editor_menus(Menu):
             
         # Add your Custom menu
         layout.menu("VIEW3D_MT_simuscle")
-
 
 if __name__ == "__main__":  # only for live edit.
     from bpy.utils import register_class
