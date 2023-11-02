@@ -4,7 +4,7 @@ from bpy.types import Menu
 # I needed to keep this import from the source code too make it work, but I don't now why
 from bpy.app.translations import contexts as i18n_contexts
 
-# Your custom menu
+# Create new Simuscle menu
 class VIEW3D_MT_simuscle(Menu):
     bl_label = "Simuscle"
     bl_idname= "VIEW3D_MT_simuscle"
@@ -12,9 +12,13 @@ class VIEW3D_MT_simuscle(Menu):
     def draw(self, _context):
         layout = self.layout
         
-        layout.operator("object.shade_smooth")
-        layout.label(text="Hello world!")
-        layout.operator("object.add_muscle")
+        layout.label(text="Bones")
+        layout.label(text="TODO")
+        layout.separator()
+        layout.label(text="Muscles")
+        layout.operator("simuscle.add_muscle")
+        layout.operator("simuscle.apply_muscle")
+        layout.operator("simuscle.delete_muscle")
 
 # Recreate the whole menu bar
 class VIEW3D_MT_editor_menus(Menu):
@@ -109,7 +113,15 @@ class VIEW3D_MT_editor_menus(Menu):
         # Add your Custom menu
         layout.menu("VIEW3D_MT_simuscle")
 
+def register():
+  bpy.utils.register_class(VIEW3D_MT_simuscle)
+  bpy.utils.register_class(VIEW3D_MT_editor_menus)
+
+def unregister():
+  bpy.utils.unregister_class(VIEW3D_MT_simuscle)
+  bpy.utils.unregister_class(VIEW3D_MT_editor_menus)
+
+
+
 if __name__ == "__main__":  # only for live edit.
-    from bpy.utils import register_class
-    register_class(VIEW3D_MT_simuscle)
-    register_class(VIEW3D_MT_editor_menus)
+    register()
