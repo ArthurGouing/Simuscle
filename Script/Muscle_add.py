@@ -32,7 +32,7 @@ def create_taper(collection):
     p3.handle_right = (0.15, 0, 0)
     
     # create Object
-    taper = bpy.data.objects.new(collection.name+'_taper', crv)
+    taper = bpy.data.objects.new('taper_'+collection.name, crv)
 
     collection.objects.link(taper)
     return taper
@@ -56,8 +56,6 @@ def create_middle_empty(start_object, end_object, name):
     const_end_rot.track_axis = 'TRACK_NEGATIVE_Y'
     const_end_rot.influence  = 0.5
     return middle
-
-
 
 def create_muscle(name):
     """
@@ -110,11 +108,12 @@ def create_muscle(name):
     
     # Create the 3 empties
     bpy.ops.object.mode_set(mode='OBJECT')
-    start_target = bpy.data.objects.new(name+"_start_target", None)
-    end_target    = bpy.data.objects.new(name+"_end_target", None)
-    # middle_target = bpy.data.objects.new(name+"_middle_target", None)
-    middle_target = create_middle_empty(start_target, end_target, name+"_middle_target")
+    start_target = bpy.data.objects.new("start_target_"+name, None)
+    end_target    = bpy.data.objects.new("end_target_"+name, None)
+    middle_target = create_middle_empty(start_target, end_target, "middle_target_"+name)
+    start_target.empty_display_type = 'SPHERE'
     middle_target.empty_display_type = 'CIRCLE'
+    end_target.empty_display_type = 'SPHERE'
     if (start_bone and end_bone):
         start_target.location.y = -start_bone.length / 2
         end_target.location.y   = -end_bone.length / 2
@@ -135,40 +134,32 @@ def create_muscle(name):
         end_target.parent_type   = 'BONE'
         end_target.parent_bone   = end_bone.name
     bpy.context.view_layer.update() #Update to compute correct matrix_world translation
-    muscle_length = (end_target.matrix_world.translation - start_target.matrix_world.translation).length
+    muscle_vec = end_target.matrix_world.translation - start_target.matrix_world.translation
+    muscle_length = muscle_vec.length
+    print(muscle_length)
     print("linked")
-    # Set constraint for the middle target
-    # const_start_loc = middle_target.constraints.new(type='COPY_LOCATION')
-    # const_start_loc.target = start_target
-    # const_start_loc.use_offset = True
-    # const_end_loc = middle_target.constraints.new(type='COPY_LOCATION')
-    # const_end_loc.target     = end_target
-    # const_end_loc.influence  = 0.5
-    # const_start_rot = middle_target.constraints.new(type='TRACK_TO')
-    # const_start_rot.target     = start_target
-    # const_start_rot.up_axis    = 'UP_Z'
-    # const_start_rot.track_axis = 'TRACK_Y'
-    # const_end_rot = middle_target.constraints.new(type='TRACK_TO')
-    # const_end_rot.target     = end_target
-    # const_end_rot.up_axis    = 'UP_Z'
-    # const_end_rot.track_axis = 'TRACK_NEGATIVE_Y'
-    # const_end_rot.influence  = 0.5
-    # bpy.context.view_layer.update() #Update to compute correct matrix_world translation
     
     # Create the muscle curve from a path nurbs
     print("create curve")
-    crv = bpy.data.curves.new(name+'_crv', 'CURVE')
+    crv = bpy.data.curves.new('crv_'+name, 'CURVE')
     crv.dimensions = '3D'
     spline = crv.splines.new(type='NURBS')
     spline.points.add(2) # theres already one point by default
     # assign the point coordinates to the spline points
-    spline.points[0].co = (0, 0, 0, 1)# start_target.matrix_world.translation.to_4d()
-    spline.points[1].co = (0, muscle_length/2, 0, 1)# middle_target.matrix_world.translation.to_4d()
-    spline.points[2].co = (0, muscle_length, 0, 1)# end_target.matrix_world.translation.to_4d()
+    spline.points[0].co = (0, 0, 0, 1)               # start_target.matrix_world.translation.to_4d()
+    spline.points[1].co = (0, muscle_length/2, 0, 1) # middle_target.matrix_world.translation.to_4d()
+    spline.points[2].co = (0, muscle_length, 0, 1)   # end_target.matrix_world.translation.to_4d()
+    crv.taper_radius_mode = 'ADD'
+    spline.points[0].radius = 0.
+    spline.points[1].radius = 0.
+    spline.points[2].radius = 0.
     spline.use_endpoint_u = True
     # make a new object with the curve
     print("create obj")
-    muscle_curve = bpy.data.objects.new(name+"_curve", crv)
+    muscle_curve = bpy.data.objects.new("curve_"+name, crv)
+    q_rot = Vector((0, 1, 0)).rotation_difference(muscle_vec)
+    muscle_curve.rotation_mode = 'QUATERNION'
+    muscle_curve.rotation_quaternion = muscle_curve.rotation_quaternion.cross(q_rot)
     collection.objects.link(muscle_curve)
 
     # Add muscle_curv constraints and modifiers
@@ -195,6 +186,7 @@ def create_muscle(name):
     bpy.ops.object.hook_assign(modifier=middle_modif.name)
     bpy.ops.object.hook_reset()
     bpy.ops.object.mode_set(mode = 'OBJECT')
+    # driver
 
     # Create the taper
     taper = create_taper(collection)
@@ -202,21 +194,22 @@ def create_muscle(name):
     muscle_curve.data.taper_object = taper
     muscle_curve.data.use_fill_caps = True
     taper.show_in_front = True
-    taper.scale = (muscle_length, 1, 1) # transform it by a driver
+    taper.scale = (1, 1, 1)
 
     # Create shape controller
     # need to create an intermediaire empty
-    middle_taper = create_middle_empty(start_target, end_target, name+"_middle_taper")
-    taper_controler_shape = bpy.data.objects.new(name+"_taper_shape", None)
+    middle_taper = create_middle_empty(start_target, end_target, "middle_taper_"+name)
+    taper_controler_shape = bpy.data.objects.new("taper_shape_"+name, None)
     taper_controler_shape.parent = middle_taper
     taper_controler_shape.empty_display_type = 'SPHERE'
     taper_controler_shape.empty_display_size = 0.3
-    taper_controler_shape.location = (1, 0, 0)
+    taper_controler_shape.location = (0.7, 0, 0)
+    taper_controler_shape.show_in_front = True
     # done
     collection.objects.link(taper_controler_shape)
 
     # Create thickness controller
-    taper_controler_thickness = bpy.data.objects.new(name+"_taper_thickness")
+    taper_controler_thickness = bpy.data.objects.new("taper_thickness_"+name, None)
     taper_controler_thickness.parent = taper
     taper_controler_thickness.empty_display_type = 'SINGLE_ARROW'
     taper_controler_thickness.empty_display_size = 1
@@ -229,24 +222,95 @@ def create_muscle(name):
     limit_loc_thick.use_max_z = True
     limit_loc_thick.owner_space = 'CUSTOM'
     limit_loc_thick.space_object = taper
-    # Create the drivers (2 same on curve vert)
-    # ...
+    # Driver
+    driver_scale = taper_controler_thickness.driver_add('scale', 0)
+    var = driver_scale.driver.variables.new()
+    var.name = "length"
+    var.type = "LOC_DIFF"
+    var.targets[0].id = start_target
+    var.targets[1].id = end_target
+    driver_scale.driver.expression = "1/length"
     # done
     collection.objects.link(taper_controler_thickness)
 
     # Add taper constraint and modifiers
+    # Constraints
     const_taper_loc = taper.constraints.new(type="COPY_LOCATION")
     const_taper_loc.target = start_target
+    taper_track_end = taper.constraints.new(type="DAMPED_TRACK")
+    taper_track_end.target = end_target
+    taper_track_end.track_axis = 'TRACK_X'
+    taper_track_shape = taper.constraints.new(type="LOCKED_TRACK")
+    taper_track_shape.target = taper_controler_shape
+    taper_track_shape.track_axis = 'TRACK_Y'
+    taper_track_shape.lock_axis = 'LOCK_X'
+    # Drivers
+    driver = taper.driver_add("scale", 0)
+    var = driver.driver.variables.new()
+    var.name = "length"
+    var.type = 'LOC_DIFF'
+    var.targets[0].id = start_target
+    var.targets[1].id = end_target
+    driver.driver.expression = "length"
+
+    # Add thick_controle driver for thick an counter size
+    driver_p0 = taper.data.splines[0].bezier_points[0].driver_add("co", 1)
+    driver_hl0 = taper.data.splines[0].bezier_points[0].driver_add("handle_left", 1)
+    driver_hr0 = taper.data.splines[0].bezier_points[0].driver_add("handle_right", 1)
+    driver_p2 = taper.data.splines[0].bezier_points[2].driver_add("co", 1)
+    driver_hl2 = taper.data.splines[0].bezier_points[2].driver_add("handle_left", 1)
+    driver_hr2 = taper.data.splines[0].bezier_points[2].driver_add("handle_right", 1)
+    drivers = [driver_p0, driver_hl0, driver_hr0, driver_p2, driver_hl2, driver_hr2]
+    for driver in drivers:
+        var = driver.driver.variables.new()
+        var.name = "thick"
+        var.type = "LOC_DIFF"
+        var.targets[0].id = taper_controler_thickness
+        var.targets[1].id = start_target
+        driver.driver.expression = "thick"
+    # var_p2 = driver_p2.driver.variables.new()
+    # var_p2.name = "thick"
+    # var_p2.type = "LOC_DIFF"
+    # var_p2.targets[0].id = taper_controler_thickness
+    # var_p2.targets[1].id = start_target
+    # driver_p2.driver.expression = "thick"
+    
+    # start and end target size driver
+    driver = start_target.driver_add("empty_display_size")
+    var = driver.driver.variables.new()
+    var.name = "size"
+    var.type = 'LOC_DIFF'
+    var.targets[0].id = start_target
+    var.targets[1].id = taper_controler_thickness
+    driver.driver.expression = "size + 0.1 if size>0.2 else 0.3"
+    driver = end_target.driver_add("empty_display_size")
+    var = driver.driver.variables.new()
+    var.name = "size"
+    var.type = 'LOC_DIFF'
+    var.targets[0].id = start_target
+    var.targets[1].id = taper_controler_thickness
+    driver.driver.expression = "size + 0.1 if size>0.2 else 0.3"
+    # Add middle_target size driver
+    driver_scale_all = middle_target.driver_add("scale")
+    print(driver_scale_all)
+    for driver in driver_scale_all:
+        print(driver)
+        print(driver.data_path)
+        print(driver.array_index)
+        print(driver.driver)
+        var = driver.driver.variables.new()
+        var.name = "width"
+        var.type = 'LOC_DIFF'
+        var.targets[0].id = taper_controler_shape
+        var.targets[1].id = middle_taper
+        driver.driver.expression = "width"
     # Create hooks
     shape_hook = taper.modifiers.new("shape", type="HOOK")
     shape_hook.object = taper_controler_shape
-    # base_hook = taper.modifiers.new("thick", type="HOOK")
-    # base_hook.object = taper_controler_thickness
-    # Select the geom
     bpy.ops.object.mode_set(mode = 'OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = taper
-    # Assigne 1st hook
+    # Assigne shape hook hook
     taper.data.splines[0].bezier_points[1].select_control_point = True
     taper.data.splines[0].bezier_points[1].select_left_handle = True
     taper.data.splines[0].bezier_points[1].select_right_handle = True
@@ -257,71 +321,8 @@ def create_muscle(name):
     taper.data.splines[0].bezier_points[1].select_control_point = False
     taper.data.splines[0].bezier_points[1].select_left_handle = False
     taper.data.splines[0].bezier_points[1].select_right_handle = False
-    # Assign 2nd hook
-    # taper.data.splines[0].bezier_points[0].select_control_point = True
-    # taper.data.splines[0].bezier_points[0].select_left_handle = True
-    # taper.data.splines[0].bezier_points[0].select_right_handle = True
-    # taper.data.splines[0].bezier_points[2].select_control_point = True
-    # taper.data.splines[0].bezier_points[2].select_left_handle = True
-    # taper.data.splines[0].bezier_points[2].select_right_handle = True
-    # bpy.ops.object.mode_set(mode = 'EDIT')
-    # bpy.ops.object.hook_assign(modifier=base_hook.name)
-    # bpy.ops.object.mode_set(mode = 'OBJECT')
-    # other parameter
 
-    # Constraints
-    taper_copy_loc = taper.constraints.new(type="COPY_LOCATION")
-    taper_copy_loc.target = start_target
-    taper_track_end = taper.constraints.new(type="DAMPED_TRACK")
-    taper_track_end.target = end_target
-    taper_track_end.track_axis = 'TRACK_X'
-    taper_track_shape = taper.constraints.new(type="LOCKED_TRACK")
-    taper_track_shape.target = taper_controler_shape
-    taper_track_shape.track_axis = 'TRACK_Y'
-    taper_track_shape.lock_axis = 'LOCK_X'
 
-    # Drivers
-
-    # Done
-
-    # taper.location = start_target.matrix_world.translation
-    # musc_vec = end_target.matrix_world.translation-start_target.matrix_world.translation
-    # taper.scale = (musc_vec.length, 1, 1)
-    # taper.rotation_mode = 'QUATERNION'
-    # q_rot = Vector((1, 0, 0)).rotation_difference(musc_vec)
-    # taper.rotation_quaternion = taper.rotation_quaternion.cross(q_rot)
-    # print("Create taper hook")
-    # taper_shape_modif  = taper.modifiers.new('Shape', type='HOOK')
-    # taper_thick_modif  = taper.modifiers.new('Thick', type='HOOK')
-    # taper_shape_modif.object  = taper_controler_shape
-    # taper_thick_modif.object  = taper_controler_thickness
-    # # select geom
-    # print("Selected object = ", C.selected_objects)
-    # bpy.ops.object.select_all(action='DESELECT')
-    # bpy.context.view_layer.objects.active = taper
-    # print("Selected object = ", C.selected_objects)
-    # # assign the start 
-    # taper.data.splines[0].bezier_points[1].select_control_point = True
-    # taper.data.splines[0].bezier_points[1].select_left_handle   = True
-    # taper.data.splines[0].bezier_points[1].select_right_handle  = True
-    # bpy.ops.object.mode_set(mode = 'EDIT')
-    # bpy.ops.object.hook_assign(modifier=taper_shape_modif.name)
-    # bpy.ops.object.hook_reset()
-    # bpy.ops.curve.select_all(action='DESELECT')
-    # # taper.data.splines[0].bezier_points[1].select_control_point = False
-    # bpy.ops.object.mode_set(mode = 'OBJECT')
-    # taper.data.splines[0].bezier_points[0].select_control_point = True
-    # taper.data.splines[0].bezier_points[0].select_left_handle   = True
-    # taper.data.splines[0].bezier_points[0].select_right_handle  = True
-    # taper.data.splines[0].bezier_points[2].select_control_point = True
-    # taper.data.splines[0].bezier_points[2].select_left_handle   = True
-    # taper.data.splines[0].bezier_points[2].select_right_handle  = True
-    # bpy.ops.object.mode_set(mode = 'EDIT')
-    # bpy.ops.object.modifier_move_up(modifier=taper_thick_modif.name)
-    # bpy.ops.object.hook_assign(modifier=taper_thick_modif.name)
-    # bpy.ops.object.hook_reset()
-    # bpy.ops.object.mode_set(mode = 'OBJECT')
-    # taper_controler_thickness.location += taper.matrix_world @ Vector((0, 0.2, 0))
 
 def apply_muscle():
     print("")
@@ -334,7 +335,7 @@ def apply_muscle():
     muscle_name = coll.name
     curve_muscle = None
     for obj in coll.objects:
-        if "_curve" in obj.name:
+        if "curve" == obj.name[:5]:
             curve_muscle = obj
             break
     if not curve_muscle:
