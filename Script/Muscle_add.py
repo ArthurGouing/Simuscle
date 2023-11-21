@@ -32,7 +32,7 @@ def create_taper(collection):
     p3.handle_right = (0.15, 0, 0)
     
     # create Object
-    taper = bpy.data.objects.new('taper_'+collection.name, crv)
+    taper = bpy.data.objects.new('taper_'+collection.muscle_name, crv)
 
     collection.objects.link(taper)
     return taper
@@ -322,6 +322,14 @@ def create_muscle(name):
     taper.data.splines[0].bezier_points[1].select_left_handle = False
     taper.data.splines[0].bezier_points[1].select_right_handle = False
 
+    # Place shaper controller at top
+    taper_controler_shape.location = (0, 0, 0.7)
+    collection.muscle_name = name
+
+    # Set the material
+    mat = bpy.data.materials.get("Muscle")
+    muscle_curve.data.materials.append(mat)
+
 
 
 def apply_muscle():
@@ -332,7 +340,7 @@ def apply_muscle():
     print("Select the muscle curve")
     bpy.ops.object.mode_set(mode = 'OBJECT')
     coll = bpy.context.object.users_collection[0]
-    muscle_name = coll.name
+    muscle_name = coll.muscle_name
     curve_muscle = None
     for obj in coll.objects:
         if "curve" == obj.name[:5]:
@@ -344,28 +352,37 @@ def apply_muscle():
     bpy.context.view_layer.objects.active = curve_muscle
     print(coll)
     print(curve_muscle)
+    print("selected: ", [obj.name for obj in bpy.context.selected_objects])
 
     # Create the mesh frome the curve ( with filled hole )
     print("Create mesh")
     curve_muscle_eval = curve_muscle.evaluated_get(bpy.context.evaluated_depsgraph_get())
     muscle_mesh = bpy.data.meshes.new_from_object(curve_muscle_eval)
-    muscle_geom = bpy.data.objects.new(name="Muscle_geom", object_data=muscle_mesh)
+    muscle_geom = bpy.data.objects.new(name="geom_"+muscle_name, object_data=muscle_mesh)
+    muscle_geom.location = curve_muscle.matrix_world.translation
     coll.objects.link(muscle_geom)
+    print(C.object)
+    bpy.ops.constraint.apply(constraint="Copy Location", owner='OBJECT', report=True)
+    bpy.ops.object.modifier_apply(modifier="end", report=True)
+    bpy.ops.object.modifier_apply(modifier="middle", report=True)
 
     # Clean the curve (rename it ?)
     print("Clean active curve")
     curve_muscle.data.bevel_depth = 0
     curve_muscle.data.taper_object = None
+    curve_muscle.show_in_front = True
+
 
     print("Recrate middle hool (TODO)")
     # Recreate the middle hook (if required)
     
     # delete useless controler
     print("delete controller")
-    print([muscle_name+"_taper", muscle_name+"_taper_shape", muscle_name+"_taper_thickness"])
+    delete_list = ["taper_"+muscle_name, "taper_shape_"+muscle_name, "taper_thickness_"+muscle_name, "start_target_"+muscle_name, "middle_target_"+muscle_name, "end_target_"+muscle_name]
+    print(delete_list)
     for obj in coll.objects:
         print(obj.name)
-        if obj.name in [muscle_name+"_taper", muscle_name+"_taper_shape", muscle_name+"_taper_thickness"]:
+        if obj.name in delete_list:
             print("delete "+obj.name)
             bpy.data.objects.remove(obj)
 
@@ -391,10 +408,10 @@ class AddMuscleOperator(bpy.types.Operator):
     bl_idname = "simuscle.add_muscle"
     bl_label = "Add Muscle"
 
-    @classmethod
-    def poll(cls, context):
-        # What is the purpose of this function ????
-        return context.active_object is not None
+    # @classmethod
+    # def poll(cls, context):
+    #     # What is the purpose of this function ????
+    #     return context.active_object is not None
 
     def execute(self, context):
         name = "Biceps_test"
@@ -415,18 +432,49 @@ class DeleteMuscleOperator(bpy.types.Operator):
         bpy.data.collections.remove(coll)
         return {'FINISHED'}
 
+def update_name(self, context):
+    self.name = self.muscle_name
+    objects = self.objects
+    for obj in objects:
+        words = obj.name.split("_")
+        if (words[0] == "taper") or (words[0] == "curve"):
+            if words[1] in ["shape", "thickness"]:
+                obj.name = "_".join(words[:2] + [self.muscle_name])
+            else:
+                obj.name = words[0] + "_" + self.muscle_name
+        else:
+            obj.name = "_".join(words[:2] + [self.muscle_name])
+
+def update_armature(self, context):
+    start_target = self.objects.get("start_target_"+self.muscle_name)
+    end_target = self.objects.get("end_target_"+self.muscle_name)
+    for obj in bpy.data.objects:
+        if obj.data:
+            if obj.data.name == self.armature:
+                print(start_target.name)
+                start_target.parent = obj
+                start_target.parent_type = 'BONE'
+                end_target.parent = obj
+                end_target.parent_type = 'BONE'
+                return
 
 def update_start_bone(self, context):
-    print("TODO: update start bone on each object of the muscel")
+    start_target = [obj for obj in self.objects if obj.name[:12] == "start_target"][0]
+    start_target.parent_bone = self.start_bone
 
 def update_end_bone(self, context):
-    print("TODO: update end bone on each object of the muscel")
+    end_target = [obj for obj in self.objects if obj.name[:10] == "end_target"][0]
+    end_target.parent_bone = self.end_bone
 
 
 def register():
     # Add muscle property in collection
+    bpy.types.Collection.muscle_name = bpy.props.StringProperty(name="muscle_name", 
+                                                         description="Name of the muscle",
+                                                         update=update_name)
     bpy.types.Collection.armature = bpy.props.StringProperty(name="Armature", 
-                                                             description="Armature on which the muscle is attached to")
+                                                             description="Armature on which the muscle is attached to",
+                                                             update=update_armature)
     bpy.types.Collection.start_bone = bpy.props.StringProperty(name="Start bone", 
                                                              description="The bone on which the muscle is insert to",
                                                              update=update_start_bone)

@@ -17,10 +17,8 @@ class MusclePanel(Panel):
         obj = context.object # En theorie inutile car obj =! du muscle object
         coll = obj.users_collection[0]
 
-        layout.prop(coll, "name")
+        layout.prop(coll, "muscle_name")
         layout.label(text="Muscle length: "+ str(2.235))
-        layout.separator()
-        layout.prop_search(coll, "armature", bpy.data, "armatures")
 
 
 class InsertionPanel(bpy.types.Panel):
@@ -40,6 +38,8 @@ class InsertionPanel(bpy.types.Panel):
         for obj in bpy.data.armatures:
             if obj.name == coll.armature:
                 armature = obj
+
+        layout.prop_search(coll, "armature", bpy.data, "armatures")
 
         if armature:
             layout.label(text="Bones insertion: ")
