@@ -59,6 +59,7 @@ class FrontTargetOperator(bpy.types.Operator):
         # Create the empty  
         start_target = bpy.data.objects.new("start_target_"+muscle.name, None)
         start_target.location = ft_pos
+        start_target.hide_set(True)
         bpy.context.collection.objects.link(start_target)
         print("Empty created")
         # Create constraint
@@ -103,6 +104,7 @@ class EndTargetOperator(bpy.types.Operator):
         # Create the empty  
         end_target = bpy.data.objects.new("end_target_"+muscle.name, None)
         end_target.location = ft_pos
+        end_target.hide_set(True)
         bpy.context.collection.objects.link(end_target)
         print("Empty created")
         # Align Y object axis with targets
