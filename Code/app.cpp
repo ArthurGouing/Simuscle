@@ -161,9 +161,10 @@ void App::Init()
   // Create window with graphics context
   Info_Print("Create GLFW window");
   window = glfwCreateWindow(size_window*1280, size_window*720, "Simuscle", nullptr, nullptr);
-  if (window == nullptr)
+  if (window == nullptr) {
     Err_Print("Failed to launch GLFW window", "main.cpp");
     exit(1);
+  }
 
   // Parameters
   Info_Print("Set GLFW parameters");

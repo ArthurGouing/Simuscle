@@ -10,7 +10,12 @@ Geometry::Geometry()
 
 Geometry::Geometry(std::string file)
 {
-  // Init
+  create_from_file(file);
+}
+
+void Geometry::create_from_file(std::string file)
+{
+    // Init
   std::ifstream geom_file(file);
   std::string buff;
   float x, y, z;
@@ -28,7 +33,7 @@ Geometry::Geometry(std::string file)
   std::cout << "Number of vertices = " << n_verts << std::endl;
   ssbuff >> n_faces;
   std::cout << "Number of faces    = " << n_faces << std::endl;
-  Info_Print(std::to_string(n_faces));
+  // Info_Print(std::to_string(n_faces));
 
   // Init vert_values
   vert_arr vert_init;
@@ -39,7 +44,7 @@ Geometry::Geometry(std::string file)
   // Process vertex
   for (int id = 0; id < n_verts; id++)
   {
-    Title_Print(std::to_string(id));
+    // Title_Print(std::to_string(id));
       if (!std::getline(geom_file, buff)) {
         Err_Print("The file suddently ended while processing vertex", "geometry.cpp");
         exit(0);
@@ -86,10 +91,10 @@ Geometry::Geometry(std::string file)
     v3->add_vert_neighbor(v1->_id); v3->add_vert_neighbor(v2->_id);
   }
   compute_normals();
-  Info_Print("End Read faces info");
-  std::cout << "nb values in face_indies : " << face_indices.size() << std::endl;
-  std::cout << "nb faces                 : " << face_indices.size()/3 << std::endl;
-  std::cout << "nb faces                 : " << n_faces << std::endl;
+  // Info_Print("End Read faces info");
+  // std::cout << "nb values in face_indies : " << face_indices.size() << std::endl;
+  // std::cout << "nb faces                 : " << face_indices.size()/3 << std::endl;
+  // std::cout << "nb faces                 : " << n_faces << std::endl;
 }
 
 Geometry::Geometry(std::vector<float> *vertices, std::vector<int> *indices):
@@ -172,11 +177,13 @@ void Geometry::set_Buffers()
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, vert_values.size() * 6 * sizeof(float), &vert_values[0], GL_DYNAMIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, face_indices.size() * sizeof(float), face_indices.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, face_indices.size() * sizeof(float), face_indices.data(), GL_STATIC_DRAW); //TODO: use dynamic draw
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) 0);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
   glEnableVertexAttribArray(1);
+
+  glBindVertexArray(0);
 }
 #endif // !GEOMETRY_CPP

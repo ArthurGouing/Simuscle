@@ -11,8 +11,8 @@
 //******** LIBRARY ******** 
 #include "tools.h"
 #include "timeline.h"
+#include "bonesinfo.h"
 #include "bone.h"
-
 class Skeleton
 {
   public:
@@ -26,7 +26,7 @@ class Skeleton
     // J'ai envie de choisir le renderer dans la class skeleton, pour choisir la manière dont on souhaite qu'il s'affiche, indépendamment des muscles et skin
     // Renderer renderer; 
 
-    void draw_skeleton_wire();
+    void draw_skeleton_stick();
     void draw_skeleton_mesh(bool wire_mode=false);
     void set_time(float time);
 

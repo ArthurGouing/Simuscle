@@ -15,6 +15,7 @@
 #include <sstream>
 
 // File
+#include "bonesinfo.h"
 #include "tools.h"
 #include "geometry.h"
 
@@ -29,8 +30,10 @@ class AnimCurve
   public:
     std::string name; // Name of the dof
     std::vector<double> _values; // values for all the frames
-
 };
+
+class BonesInfo;
+
 
 enum RotateOrder {roXYZ=123, roYZX=312, roZXY=231, roXZY=132, roYXZ=213, roZYX=321};
 
@@ -43,6 +46,12 @@ class Bone // = The joint class in SIA Project
     ~Bone();
 
     void create_from_file(std::string file_name);
+    void create_geometry(BonesInfo info, std::string project_path, int* indice_offset);
+    void update_values(std::vector<glm::vert_arr>* values, std::vector<int>* indices);
+    
+    // Put it in private
+    Geometry _mesh;
+    std::vector<Bone> _childrens;
    private:
     // static void create(std::string name, glm::vec3 offset, Bone* parent);
     void parse_bone(std::ifstream& anim_file, std::string name, Bone* parent);
@@ -56,13 +65,11 @@ class Bone // = The joint class in SIA Project
 
     std::string _name;
    private:
-    Geometry _mesh;
     glm::vec3 _offset; // peut etre en vec4 pour pouvoir faire les transform
     glm::vec3 _translation;
     glm::vec3 _rotation;
     RotateOrder _rorder;
 
-    std::vector<Bone> _childrens;
     int _nb_frames; // a mettre dans timeline plutot
     int _frame_time;// a mettre dans timeline plutot
 

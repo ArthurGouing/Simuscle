@@ -3,7 +3,11 @@
 
 #include "bone.h"
 
+#include <chrono>
+#include <typeinfo>
+
 using namespace glm;
+using namespace std::chrono;
 
 enum Token {Hierarchy, Motion, Offset, Channels, Joint, End, Return, Default};
 Token find_tok(std::string buff)
@@ -158,6 +162,41 @@ void Bone::parse_frames(std::ifstream& anim_file)
   for (int ichild = 0; ichild < _childrens.size(); ichild++)
   {
     _childrens[ichild].parse_frames(anim_file);
+  }
+}
+
+void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice_offset)
+// Read bone_inf.json file to assigne the correct geometry to each bone
+{
+  for (int i = 0; i < info.list_info.size(); i++)
+  {
+    // Info_Print(info.list_info[i].parent);
+    // Info_Print(_name);
+    if (info.list_info[i].parent == _name) {
+      std::string geometry_file = project_path+"Bones/"+info.list_info[i].name+".off";
+      Info_Print(geometry_file);
+      _mesh.create_from_file(geometry_file);
+      for (int i = 0; i < _mesh.face_indices.size(); i++){
+        _mesh.face_indices[i] += *indice_offset;
+      }
+      *indice_offset += _mesh.n_verts;
+      break;
+    }
+  }
+  // Recursive child function
+  for (int ichild = 0; ichild < _childrens.size(); ichild++) {
+    _childrens[ichild].create_geometry(info, project_path, indice_offset);
+  }
+}
+
+
+void Bone::update_values(std::vector<glm::vert_arr>* values,std::vector<int>* indices)
+  // Update recursively geometry to the VAO for every bones
+{
+  values->insert(values->end(), _mesh.vert_values.begin(), _mesh.vert_values.end());
+  indices->insert(indices->end(), _mesh.face_indices.begin(), _mesh.face_indices.end());
+  for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
+    _childrens[ichild].update_values(values, indices);
   }
 }
 
