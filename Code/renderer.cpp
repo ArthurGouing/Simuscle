@@ -155,17 +155,21 @@ void Renderer::Draw()
     int viewLoc = glGetUniformLocation(shaderProgram, "view");
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(_view));
 
-    // Draw Skeleton
     glUseProgram(shaderProgram);
-    if (skel_mode=="stick") {
-      _skel->draw_skeleton_wire(); // replace set_buff + draw
-    } else if (skel_mode=="mesh") {
-      _skel->draw_skeleton_mesh();
-    } else if (skel_mode=="wire") {
-      _skel->draw_skeleton_mesh(true);
-    } else {
-      Info_Print("Default case: the skeleton won't be draw");
-    }
+
+    _skel->draw_skeleton_mesh();
+
+    // Draw Skeleton
+    // glUseProgram(shaderProgram);
+    // if (skel_mode=="stick") {
+    //   _skel->draw_skeleton_stick(); // replace set_buff + draw
+    // } else if (skel_mode=="mesh") {
+    //   _skel->draw_skeleton_mesh();
+    // } else if (skel_mode=="wire") {
+    //   _skel->draw_skeleton_mesh(true);
+    // } else {
+    //   Info_Print("Default case: the skeleton won't be draw");
+    // }
 
     // Do the same for the skin and the muscles
  

@@ -34,6 +34,7 @@ class Geometry {
     Geometry(std::string file);
     Geometry();
     ~Geometry();
+    void create_from_file(std::string file);
 
     void compute_normals();
 

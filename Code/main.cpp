@@ -18,7 +18,8 @@ int main()
   // Initialize the application
   // Geometry mesh("../Blender_scene/Human_triangulate.off");
   // Geometry mesh("../Blender_scene/Sphere.off");
-  std::string project = "./Test_case/";
+  // Select the directory of the project
+  std::string project = "../Blender_scene/Test/";
   Skeleton skeleton(project);
   // MuscleSystem muscles(project, &skeleton);
   //Skin character(project, &skeleton, &muscles);
