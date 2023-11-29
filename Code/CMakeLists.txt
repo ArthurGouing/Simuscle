@@ -18,12 +18,13 @@ set(LIBS imgui GL glfw rt m dl)
 
 # Crée des variables avec les fichiers à compiler
 # set(SRCS main.cpp) # Utiliser file(GLOB_RESCUE ...) plutot
-file(GLOB SRCS *.cpp)
-file(GLOB HEADERS glad.c *.h)
+file(GLOB SRCS */*.cpp *.cpp)
+file(GLOB HEADERS glad.c */*.h)
 
 # set(HEADERS ...) # Idem
 
 # Crée l'exécutable apartir des sources et des headers
+include_directories(${CMAKE_SOURCE_DIR})
 add_executable(exe ${SRCS} ${HEADERS})
 
 # Indique les librairie à utiliser

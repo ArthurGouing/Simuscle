@@ -42,7 +42,6 @@ void Bone::create_from_file(std::string file_name)
   // Init
   std::ifstream anim_file(file_name);
   std::string   buff; 
-  Info_Print("Open '"+ file_name +"'");
   if (!anim_file.is_open()) {
     Err_Print("Cannot open "+file_name, "bone.cpp");
     return;// ou exit ??
@@ -51,7 +50,6 @@ void Bone::create_from_file(std::string file_name)
   while (anim_file.is_open())
   {
     anim_file >> buff; 
-    Info_Print("Maine while loop; "+buff);
     switch (find_tok(buff)) {
       case Hierarchy:
         anim_file >> buff;
@@ -63,7 +61,6 @@ void Bone::create_from_file(std::string file_name)
         parse_bone(anim_file, buff, nullptr);
         break;
       case Motion:
-        Info_Print("Parse MOTION");
         int nb_frame;
         float frame_time;
         anim_file >> buff; anim_file >> nb_frame;
@@ -74,7 +71,6 @@ void Bone::create_from_file(std::string file_name)
         {
           parse_frames(anim_file);
         }
-        Info_Print("End Read Data");
         anim_file.close();
         break;
       default:
@@ -82,7 +78,6 @@ void Bone::create_from_file(std::string file_name)
           return;
     }
   }
-  print_bone(0);
 }
 
 void Bone::parse_bone(std::ifstream& anim_file, std::string name, Bone* parent)
@@ -170,11 +165,8 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
 {
   for (int i = 0; i < info.list_info.size(); i++)
   {
-    // Info_Print(info.list_info[i].parent);
-    // Info_Print(_name);
     if (info.list_info[i].parent == _name) {
       std::string geometry_file = project_path+"Bones/"+info.list_info[i].name+".off";
-      Info_Print(geometry_file);
       _mesh.create_from_file(geometry_file);
       for (int i = 0; i < _mesh.face_indices.size(); i++){
         _mesh.face_indices[i] += *indice_offset;
@@ -188,7 +180,6 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
     _childrens[ichild].create_geometry(info, project_path, indice_offset);
   }
 }
-
 
 void Bone::update_values(std::vector<glm::vert_arr>* values,std::vector<int>* indices)
   // Update recursively geometry to the VAO for every bones
@@ -225,6 +216,23 @@ void Bone::print_bone(int level)
   {
     _childrens[i].print_bone(level+1);
   }
+}
+
+Bone* Bone::find_bone(std::string bone_name)
+{
+  if (_name == bone_name)
+  {
+   return this;
+  }
+  for (int ichild = 0; ichild < _childrens.size(); ichild++)
+  {
+    Bone* bone;
+    bone = _childrens[ichild].find_bone(bone_name);
+    if (bone != nullptr)
+    return bone;
+  }
+  Err_Print("The bone "+ bone_name +" was not find", "bone.cpp");
+  return nullptr;
 }
 
 Bone::~Bone()

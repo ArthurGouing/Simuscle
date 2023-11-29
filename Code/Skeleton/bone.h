@@ -16,8 +16,8 @@
 
 // File
 #include "bonesinfo.h"
-#include "tools.h"
-#include "geometry.h"
+#include "Tools/tools.h"
+#include "Geometry/geometry.h"
 
 class AnimCurve
 {
@@ -48,10 +48,13 @@ class Bone // = The joint class in SIA Project
     void create_from_file(std::string file_name);
     void create_geometry(BonesInfo info, std::string project_path, int* indice_offset);
     void update_values(std::vector<glm::vert_arr>* values, std::vector<int>* indices);
+    Bone* find_bone(std::string bone_name);
+    void print_bone(int level=0);
     
     // Put it in private
     Geometry _mesh;
     std::vector<Bone> _childrens;
+    std::string _name;
    private:
     // static void create(std::string name, glm::vec3 offset, Bone* parent);
     void parse_bone(std::ifstream& anim_file, std::string name, Bone* parent);
@@ -60,10 +63,8 @@ class Bone // = The joint class in SIA Project
     // void getglobaleposition
     // computevertex
     // computeoffset
-    void print_bone(int level=0);
 
 
-    std::string _name;
    private:
     glm::vec3 _offset; // peut etre en vec4 pour pouvoir faire les transform
     glm::vec3 _translation;

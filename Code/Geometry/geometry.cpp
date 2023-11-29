@@ -15,7 +15,7 @@ Geometry::Geometry(std::string file)
 
 void Geometry::create_from_file(std::string file)
 {
-    // Init
+  // Init
   std::ifstream geom_file(file);
   std::string buff;
   float x, y, z;
@@ -24,16 +24,16 @@ void Geometry::create_from_file(std::string file)
   // Open file
   if (!geom_file.is_open())
     Err_Print("Cannot open "+file, "geometry.cpp");
-  geom_file >> buff; std::cout << "Read geometry from " << buff <<" format" << std::endl;
+  geom_file >> buff; 
   std::getline(geom_file, buff);
   std::getline(geom_file, buff);
-  std::cout << buff << std::endl;
   std::stringstream ssbuff(buff);
   ssbuff >> n_verts;
-  std::cout << "Number of vertices = " << n_verts << std::endl;
   ssbuff >> n_faces;
-  std::cout << "Number of faces    = " << n_faces << std::endl;
-  // Info_Print(std::to_string(n_faces));
+
+  Info_Print("Reading " + file);
+  Info_Print("  Number of vertices = " + std::to_string(n_verts));
+  Info_Print("  Number of faces = " + std::to_string(n_faces));
 
   // Init vert_values
   vert_arr vert_init;
@@ -57,8 +57,6 @@ void Geometry::create_from_file(std::string file)
     Vertex vert(id, &vert_values);
     vertex_list.push_back(vert);
   }
-  // geom_file >> buff; std::cout << buff << std::endl;
-  std::cout << "nb vert : " << vert_values.size() << std::endl;
  
   // Process Faces
   for (int id = 0; id < n_faces; id++) 

@@ -23,22 +23,26 @@
 #include <set>
 
 // Files
-#include "skeleton.h"
-#include "stb_image.h"
-#include "tools.h"
+#include "Skeleton/skeleton.h"
+#include "Muscles/muscle_system.h"
+#include "Tools/stb_image.h"
+#include "Tools/tools.h"
 
 class Renderer {
   public:
     // Constructeur
-    Renderer(Skeleton *skeleton);
+    Renderer(Skeleton *skeleton, MuscleSystem *muscles);
     ~Renderer();
 
     // Init
     void Init(int width, int height);
+    void load_shader(std::string fshader_src, std::string vshader_src,
+        unsigned int& fragmentShader, unsigned int& vertexShader,  unsigned int& shaderProgram);
+    void load_texture(std::string texture_path, unsigned int* textureid);
 
     // Inner class
     Skeleton * _skel;
-    // MuscleSystem *_musclesys;
+    MuscleSystem *_musclesys;
     // Skin         *_char;
 
     // Render a new frame 
@@ -63,7 +67,8 @@ class Renderer {
     unsigned int framebuffer;
     unsigned int textureColorbuffer;
     unsigned int rbo;
-    unsigned int texture;
+    unsigned int texture_matcap;
+    unsigned int texture_muscle_matcap;
   private:
     // Camera view variable
     float     zNear, zFar, fov;
@@ -71,17 +76,29 @@ class Renderer {
     glm::vec3 _camerapos;
     float     _cameradist;
 
+    // Shader variable
+    float _theta;
+    bool _mymatcap;
+
     // Shader ids
-    unsigned int vertexShader;
-    unsigned int fragmentShader;
-    unsigned int shaderProgram;
+    unsigned int skin_vertexShader;
+    unsigned int skin_fragmentShader;
+    unsigned int skin_shaderProgram;
+    // muscle shader
+    unsigned int muscle_vertexShader;
+    unsigned int muscle_fragmentShader;
+    unsigned int muscle_shaderProgram;
+    // ground shader
+    // ...
+    // TODO
+    // ...
 
     ImVec4 clear_color;
 
     // Render mode
     std::string skel_mode; // choice: ["stick", "wire", "mesh]
-    // std::string muscle_mode;
-    // std::string skin_mode;
+    std::string muscle_mode; // choice: ["curve", "wire", "mesh"]
+    // std::string skin_mode; // choice; ["wire", "mesh"]
 
     // Texture variable
     int width, height, nrChannels;

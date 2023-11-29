@@ -11,7 +11,8 @@
 //******** LIBRARY ******** 
 #include "app.h"
 #include "renderer.h"
-#include "skeleton.h"
+#include "Skeleton/skeleton.h"
+#include "Muscles/muscle_system.h"
 
 int main()
 {
@@ -20,10 +21,10 @@ int main()
   // Geometry mesh("../Blender_scene/Sphere.off");
   // Select the directory of the project
   std::string project = "../Blender_scene/Test/";
-  Skeleton skeleton(project);
-  // MuscleSystem muscles(project, &skeleton);
+  Skeleton skeleton(project/*, Timeline or SimulationManager*/);
+  MuscleSystem muscles(project, &skeleton);
   //Skin character(project, &skeleton, &muscles);
-  Renderer matcap_render(&skeleton/*, &muscles, &character*/);
+  Renderer matcap_render(&skeleton, &muscles/*, &character*/);
   App Simuscle_app(&matcap_render);
   Simuscle_app.Init();
 
