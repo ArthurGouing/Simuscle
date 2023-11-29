@@ -26,10 +26,10 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "tools.h"
+#include "Tools/tools.h"
 #include "renderer.h"
 #include "timeline.h"
-#include "geometry.h"
+#include "Geometry/geometry.h"
 
 
 class App {

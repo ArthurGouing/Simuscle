@@ -9,9 +9,9 @@ def export_simuscle(context, filepath, use_some_setting):
     os.mkdir(filepath)
     os.mkdir(filepath+"/Muscles")
     os.mkdir(filepath+"/Bones")
-    os.mkdir(filepath+"/Animation")
     # Export Bones
     bones = [obj for obj in bpy.data.collections["Skeleton"].objects if obj.parent is not None]
+    print(bones)
     file = filepath+"/Bones/bones_info"
     bone_file = open(file + ".json", "w")
     bone_file.write("[\n")
@@ -23,6 +23,7 @@ def export_simuscle(context, filepath, use_some_setting):
         export_mesh(path_file, bone)
         print(f"(written in {time()-t:3f} sec)")
         t = time()
+    bone_file.write("]")
     bone_file.close()
     t_bone = t
     # Export Muscles
@@ -38,7 +39,7 @@ def export_simuscle(context, filepath, use_some_setting):
         print("Write "+muscle.name, end="")
         path_file = filepath+"/Muscles/"+muscle.name.replace(" ", "_")
         export_mesh(path_file, muscle)
-        print(f"(written in {time()-t} sec)")
+        print(f"(written in {time()-t:.3f} sec)")
         t = time()
     muscle_file.write("]")
     muscle_file.close()
@@ -48,19 +49,19 @@ def export_simuscle(context, filepath, use_some_setting):
     path_file = filepath+"/skin"
     print("Write ", skin.name, end="")
     export_mesh(path_file, skin)
-    print(f"(written in {time()-t} sec)")
+    print(f"(written in {time()-t:.3f} sec)")
     t = time()
     t_skin = t
     # Export animation
     print("Write ", skin.parent.name, end="")
-    export_anim("Animation", skin.parent)
+    path_file = filepath+"/animation"
+    export_anim(path_file, skin.parent)
     t = time()
-    print(f"(written in {time()-t:3f} sec)")
-    print(f"T_bone : {t_bone-t0} sec")
-    print(f"T_muscle : {t_muscle-t_bone} sec")
-    print(f"T_skin : {t_skin-t_muscle} sec")
-    print(f"T_anim : {t-t_skin} sec")
-    print(f"T_tot : {t-t0} sec")
+    print(f"T_bone : {t_bone-t0:.3f} sec")
+    print(f"T_muscle : {t_muscle-t_bone:.3f} sec")
+    print(f"T_skin : {t_skin-t_muscle:.3f} sec")
+    print(f"T_anim : {t-t_skin:.3f} sec")
+    print(f"T_tot : {t-t0:.3f} sec")
 
     return {'FINISHED'}
 
@@ -68,7 +69,7 @@ def bone_info(bone, is_last):
     """ Return JSON formated string containing all bone info"""
     info  = '  {\n'
     info += f'    "name": "{bone.name}",\n'
-    info += f'    "parent": "{bone.vertex_groups[0].name}",\n'
+    info += f'    "parent": "{bone.vertex_groups[0].name}"\n'
     # add origin info ???
     if is_last:
         info += '  }\n]'
@@ -82,17 +83,17 @@ def muscle_info(muscle, is_last):
     end_target = bpy.data.objects.get("end_target_"+muscle.name)
     info =   '  {\n'
     info += f'    "name": "{muscle.name}",\n'
-    info += f'    "geometry": "{muscle.name.replace(" ", "_")}.off",\n'
-    if start_target:
-        info += f'    "curve_start": [{start_target.location[0]}, {start_target.location[1]}, {start_target.location[2]}],\n'
-        info += f'    "bone_start": "{start_target.parent_bone}",\n'
-    if end_target:
-        info += f'    "curve_end": [{end_target.location[0]}, {end_target.location[1]}, {end_target.location[2]}],\n'
-        info += f'    "bone_end": "{end_target.parent_bone}",\n'
-    if is_last:
-        info += '  }\n]'
-    else:
-        info += '  },\n'
+    info += f'    "geometry": "{muscle.name.replace(" ", "_")}.off"\n'
+    # if start_target:
+    #     info += f'    "curve_start": [{start_target.location[0]}, {start_target.location[1]}, {start_target.location[2]}],\n'
+    #     info += f'    "bone_start": "{start_target.parent_bone}",\n'
+    # if end_target:
+    #     info += f'    "curve_end": [{end_target.location[0]}, {end_target.location[1]}, {end_target.location[2]}],\n'
+    #     info += f'    "bone_end": "{end_target.parent_bone}",\n'
+    # if is_last:
+    #     info += '  }\n]'
+    # else:
+    #     info += '  },\n'
     return info
 
 
@@ -119,9 +120,10 @@ def export_mesh(file_name, obj):
     for v in vertices:
         index = v.index
         # Geometry
-        loc_x = v.co[0]
-        loc_y = v.co[1]
-        loc_z = v.co[2]
+        co = obj.matrix_world @ v.co
+        loc_x = co[0]
+        loc_y = co[1]
+        loc_z = co[2]
         geom_file.write(f"{loc_x:.8f} {loc_y:.8f} {loc_z:.8f}\n")
 
     # Write all faces
@@ -138,8 +140,7 @@ def export_mesh(file_name, obj):
 def export_anim(file_name, armature):
     # Open the files
     bpy.context.view_layer.objects.active = armature
-    file = file_name
-    bpy.ops.export_anim.bvh(filepath=file + ".bvh",
+    bpy.ops.export_anim.bvh(filepath=file_name + ".bvh",
                             frame_start=0,
                             frame_end=300)
 

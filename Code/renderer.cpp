@@ -5,36 +5,81 @@
 
 using namespace glm;
 
-Renderer::Renderer(Skeleton *skeleton):
-  _skel(skeleton), skel_mode("wire"),
+Renderer::Renderer(Skeleton *skeleton, MuscleSystem *muscles):
+  _skel(skeleton), _musclesys(muscles), skel_mode("mesh"), muscle_mode("mesh"),
   zNear(0.1f), zFar(1500.0), fov(45.0),
   _cameradist(3.0f), _camerapos(vec3(0.0f, 0.0f, -1.0f)), 
+  _theta(90 * 6.2832/360), _mymatcap(true),
   _rotation(mat4(-0.71f, -0.03f,  -0.65f, 0.0f,
                   0.64f, -0.025f, -0.75f, 0.0f,
                   0.02f, -0.99f,   0.04f, 0.0f,
                   0.0f,   0.0f ,   0.0f, 1.0f))
 {
+  _skel->set_mode("mesh");
+  _musclesys->set_mode("mesh");
 }
 
 Renderer::~Renderer()
 {
+  glDeleteTextures(1, &textureColorbuffer);
+  glDeleteTextures(1, &texture_matcap);
+  glDeleteTextures(1, &texture_muscle_matcap);
   glDeleteRenderbuffers(1, &rbo);
   glDeleteFramebuffers(1, &framebuffer);
+  delete _skel;
+  delete _musclesys;
 }
 
 void Renderer::Init(int width, int height)
 {
+  /******** Compile shaders ********/
+  Info_Print("Load shaders");
+  // Load Shader for the bones and skin
+  load_shader("skin_shader.frag", "skin_shader.vert", skin_fragmentShader, skin_vertexShader, skin_shaderProgram);
+
+  // Load Shader for muscles
+  // load_shader("muscle_shader.frag", "muscle_shader.vert", muscle_fragmentShader, muscle_vertexShader, muscle_shaderProgram);
+
+  // glEnable(GL_CULL_FACE);  
+  glEnable(GL_DEPTH_TEST);
+
+  /******** init geometry buffers ********/
+  Info_Print("set Vert Buff");
+  _musclesys->update_VBO();
+  _skel->init_buffers();
+
+  /******** framebuffer configuration ********/
+  Info_Print("Create Framebuffer");
+  resize_fbo(width, height);
+
+  /******** Load Texture *******/
+  Info_Print("Load Texture : ''./light_matcap.jpg'");
+  load_texture("./white_matcap_2.jpg", &texture_matcap);
+  Info_Print("Load Texture : ''./red_matcap.png'");
+  load_texture("./red_matcap.png", &texture_muscle_matcap);
+  // send texture to shader
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture_matcap);
+  glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTexture"), 0);
+  // glActiveTexture(GL_TEXTURE1);
+  // glBindTexture(GL_TEXTURE_2D, texture_muscle_matcap);
+  // glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTextureRed"), 1);
+
+  Info_Print("Done");
+}
+
+void Renderer::load_shader(std::string fshader_src, std::string vshader_src, 
+    unsigned int& fragmentShader, unsigned int& vertexShader,  unsigned int& shaderProgram)
+{
   /******** Vertex shader ********/
-  Info_Print("Compile vertex shader");
-  std::string vshader_src = "base_shader.vert";
-  std::ifstream vertexShaderFile("base_shader.vert");
+  std::ifstream vertexShaderFile(vshader_src);
   std::ostringstream vertexBuffer;
   vertexBuffer << vertexShaderFile.rdbuf();
   std::string vertexBufferStr = vertexBuffer.str();
   // Warning: safe only until vertexBufferStr is destroyed or modified
   const GLchar *source_vert = vertexBufferStr.c_str();
 
-  unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &source_vert, 0);
   glCompileShader(vertexShader);
   // check for shader compile errors
@@ -49,8 +94,6 @@ void Renderer::Init(int width, int height)
   }
 
   /******** Fragment shader ********/
-  Info_Print("Compile fragment shader");
-  std::string fshader_src = "base_shader.frag";
   std::ifstream fragShaderFile(fshader_src);
   std::ostringstream fragBuffer;
   fragBuffer << fragShaderFile.rdbuf();
@@ -58,7 +101,7 @@ void Renderer::Init(int width, int height)
   // Warning: safe only until vertexBufferStr is destroyed or modified
   const GLchar *source_frag = fragBufferStr.c_str();
  
-  unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
   glShaderSource(fragmentShader, 1, &source_frag, NULL);
   glCompileShader(fragmentShader);
   // check for shader compile errors
@@ -71,7 +114,6 @@ void Renderer::Init(int width, int height)
   }
 
   /******** Link shader ********/
-  Info_Print("Link shader");
   shaderProgram = glCreateProgram();
   glAttachShader(shaderProgram, vertexShader);
   glAttachShader(shaderProgram, fragmentShader);
@@ -84,29 +126,28 @@ void Renderer::Init(int width, int height)
     exit(1);
   }
 
+  /******** Cleaning ********/
+  vertexShaderFile.close();
+  fragShaderFile.close();
+}
 
-  // glEnable(GL_CULL_FACE);  
-  glEnable(GL_DEPTH_TEST);
-  // _skel->alloc_buff(); //TODO:
-  Info_Print("set Vert Buff");
-
-  /******** framebuffer configuration ********/
-  Info_Print("Create Framebuffer");
-  resize_fbo(width, height);
-
-  /******** Load Texture *******/
-  Info_Print("Load texture");
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-                                         // set the texture wrapping parameters
+void Renderer::load_texture(std::string texture_path, unsigned int* textureid)
+{
+  glGenTextures(1, textureid);
+  glBindTexture(GL_TEXTURE_2D, *textureid); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+  // set the texture wrapping parameters
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   // set texture filtering parameters
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
   // load image, create texture and generate mipmaps
   // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-  unsigned char *data = stbi_load("./mshade3.jpg", &width, &height, &nrChannels, 0); 
+  char* texture_char = new char[texture_path.length()+1];
+  strcpy(texture_char, texture_path.c_str());
+  std::cout << texture_char << std::endl;
+  unsigned char *data = stbi_load(texture_char, &width, &height, &nrChannels, 0); 
   if (data)
   {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -116,20 +157,11 @@ void Renderer::Init(int width, int height)
   {
     std::cout << "Failed to load texture" << std::endl;
   }
-  stbi_image_free(data);
-  // send texture to shader
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, 2);
-  glUniform1i(glGetUniformLocation(fragmentShader, "MatcapTexture"), 0);
 
   /******** Cleaning ********/
-  Info_Print("Cleaning");
-  vertexShaderFile.close();
-  fragShaderFile.close();
-  // glDeleteShader(vertexShader);
-  // glDeleteShader(fragmentShader);
-  Info_Print("Done");
+  stbi_image_free(data);
 }
+
 
 void Renderer::Draw()
 {
@@ -150,14 +182,27 @@ void Renderer::Draw()
     _vpmat = _projection * _view;
 
     // Send values to shaders
-    int modelLoc = glGetUniformLocation(shaderProgram, "vp_mat");
+    int modelLoc = glGetUniformLocation(skin_shaderProgram, "vp_mat");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(_vpmat));
-    int viewLoc = glGetUniformLocation(shaderProgram, "view");
+    int viewLoc = glGetUniformLocation(skin_shaderProgram, "view");
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(_view));
+    int thetaLoc = glGetUniformLocation(skin_shaderProgram, "theta"); 
+    // Info_Print(std::to_string(_theta));
+    glUniform1f(thetaLoc, _theta);
+    // int matcapLoc = glGetUniformLocation(skin_shaderProgram, "my_matcap");
+    // glUniform1i(matcapLoc, _mymatcap);
 
-    glUseProgram(shaderProgram);
-
+    glUseProgram(skin_shaderProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_matcap);
+    glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTexture"), 0);
     _skel->draw_skeleton_mesh();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_muscle_matcap);
+    glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTextureRed"), 0);
+    _musclesys->update_VBO();
+    _musclesys->draw_muscles();
 
     // Draw Skeleton
     // glUseProgram(shaderProgram);
@@ -176,6 +221,7 @@ void Renderer::Draw()
     // UnBind
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // = unbind framebuffer
+    // delete &modelLoc, &viewLoc, &thetaLoc;
 }
 
 void Renderer::resize_fbo(int width, int height)
@@ -211,8 +257,8 @@ void Renderer::resize_fbo(int width, int height)
 
   // Say which texture had to go to shader
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, 2);
-  glUniform1i(glGetUniformLocation(fragmentShader, "MatcapTexture"), 0);
+  glBindTexture(GL_TEXTURE_2D, texture_matcap);
+  glUniform1i(glGetUniformLocation(skin_fragmentShader, "MatcapTexture"), 0);
 }
 
 void Renderer::update_rotation(vec2 mouse_offset, float angle)
@@ -254,6 +300,8 @@ void Renderer::reset_view()
 void Renderer::UI_pannel()
 {
   ImGui::Begin("Render Settings");
+  ImGui::SliderFloat("Light angle", &_theta, -2.f, 2.f);            // Edit 1 float using a slider from 0.0f to 1.0f
+  ImGui::Checkbox("Ficed matcap", &_mymatcap);
   ImGui::End();
 }
 
