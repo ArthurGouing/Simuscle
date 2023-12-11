@@ -19,6 +19,8 @@ class VIEW3D_MT_simuscle(Menu):
         layout.operator("simuscle.add_muscle")
         layout.operator("simuscle.apply_muscle")
         layout.operator("simuscle.delete_muscle")
+        layout.operator("muscle.add_front_target")
+        layout.operator("muscle.add_end_target")
 
 # Recreate the whole menu bar
 class VIEW3D_MT_editor_menus(Menu):

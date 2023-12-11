@@ -59,8 +59,8 @@ class FrontTargetOperator(bpy.types.Operator):
         # Create the empty  
         start_target = bpy.data.objects.new("start_target_"+muscle.name, None)
         start_target.location = ft_pos
-        start_target.hide_set(True)
         bpy.context.collection.objects.link(start_target)
+        start_target.hide_set(True)
         print("Empty created")
         # Create constraint
         ft_constraint = muscle.constraints.new('COPY_LOCATION')
@@ -89,6 +89,9 @@ class EndTargetOperator(bpy.types.Operator):
     def execute(self, context):
         # Select Vertices
         muscle = bpy.context.object
+        muscle_collection = bpy.data.collections.new(muscle.name)
+        muscle_collection.color_tag = 'COLOR_01'
+        muscle.users_collection[0].children.link(muscle_collection)
         bpy.ops.object.mode_set(mode='OBJECT')
         s_vert = [v for v in bpy.context.object.data.vertices if v.select]
         # Create vertex groupe
@@ -104,8 +107,8 @@ class EndTargetOperator(bpy.types.Operator):
         # Create the empty  
         end_target = bpy.data.objects.new("end_target_"+muscle.name, None)
         end_target.location = ft_pos
+        muscle_collection.objects.link(end_target)
         end_target.hide_set(True)
-        bpy.context.collection.objects.link(end_target)
         print("Empty created")
         # Align Y object axis with targets
         start_target = bpy.data.objects.get("start_target_"+muscle.name)
@@ -121,6 +124,42 @@ class EndTargetOperator(bpy.types.Operator):
         et_constraint = muscle.constraints.new('STRETCH_TO')
         et_constraint.target = end_target
         print("constraint created")
+        
+        # Compute middle point for curve
+        middle_loc = Vector((0, 0, 0))
+        i=0
+        print("middle_loc init: ", middle_loc)
+        for v in muscle.data.vertices:
+            i+=i
+            middle_loc += muscle.matrix_world @ v.co
+        print(len(muscle.data.vertices), " nombre d'op: ", i)
+        middle_loc = middle_loc / len(muscle.data.vertices)
+        print("middle loc: ", middle_loc)
+        
+        curve = bpy.data.curves.new(muscle.name+"_curve", 'CURVE')
+        curve.dimensions = '3D' # useless for 2D
+        spline = curve.splines.new('BEZIER')
+        spline.bezier_points.add(1)
+
+        # map coords to spline
+        p1 = spline.bezier_points[0]
+        p1.co =           start_target.location
+        p1.handle_right = middle_loc
+        p2 = spline.bezier_points[1]
+        p2.co =           end_target.location
+        p2.handle_left =  middle_loc
+
+        # create Object
+        muscle_curve = bpy.data.objects.new('curve_'+muscle.name, curve)
+        muscle_collection.objects.link(muscle_curve)
+        muscle_curve.show_in_front = True
+        # Add start_target and muscle to the muscle_collection
+        bpy.context.collection.objects.unlink(start_target)
+        muscle_collection.objects.link(start_target)
+        muscle.users_collection[0].objects.unlink(muscle)
+        muscle_collection.objects.link(muscle)
+
+        
         return {'FINISHED'}
     
 
@@ -162,11 +201,12 @@ def unregister():
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
     
-    bpy.utils.unregister_class(FrontTargetOperator)
-    bpy.utils.unregister_class(EndTargetOperator)
+    # bpy.utils.unregister_class(FrontTargetOperator)
+    # bpy.utils.unregister_class(EndTargetOperator)
+    # bpy.utils.unregister_class(VIEW3D_MT_muscle)
     bpy.types.VIEW3D_MT_object.remove(menu_func)
 
-
 if __name__ == "__main__":
+    unregister()
     register()
 

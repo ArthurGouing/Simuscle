@@ -13,29 +13,40 @@ bl_info = {
  }
 if __name__=="__main__":
     import sys
-    dir = r"C:\Users\picol\Documents\Simuscle\Script"
-    print(dir)
+    dir = r"/home/arthos/Simuscle/Script"
     print(sys.path)
     if not dir in sys.path:
-        sys.path.append(dir )
+        sys.path.insert(1, dir)
         print(dir)
-    import Addon_Add_muscle_object, Menu_Simuscle, View3D_Panel
+        print(sys.path)
+    import Addon_Add_muscle_object
+    import Addon_Exporter
+    import Muscle_deformation
+    import Menu_Simuscle
+    import View3D_Panel
 else:
     # import all classes
+    print("read __int__.py")
     if "bpy" in locals():
         import importlib
         importlib.reload(Addon_Add_muscle_object)
+        importlib.reload(Addon_Exporter)
+        importlib.reload(Muscle_deformation)
         importlib.reload(Menu_Simuscle)
         importlib.reload(View3D_Panel)
         print("Reload files")
     else:
         from . import Addon_Add_muscle_object
+        from . import Addon_Exporter
+        from . import Muscle_deformation
         from . import Menu_Simuscle
         from . import View3D_Panel
         print("Import multifiles")
 
+print("read __int__.py 2")
 import bpy
 from bpy.types import Menu
+from bpy.app.translations import contexts as i18n_contexts
 
 class VIEW3D_MT_editor_menus(Menu):
     bl_label = ""
@@ -132,6 +143,8 @@ addon_keymaps = list()
 def register():
   print ("Registering ", __name__)
   Addon_Add_muscle_object.register()
+  Addon_Exporter.register()
+  Muscle_deformation.register()
   Menu_Simuscle.register()
   View3D_Panel.register()
   
@@ -155,9 +168,12 @@ def unregister():
   Addon_Add_muscle_object.unregister()
   Menu_Simuscle.unregister()
   View3D_Panel.unregister()
+  Addon_Exporter.unregister()
+  Muscle_deformation.unregister()
 
   # reset the original menu (peut être metre dans le Menu_Simuscle)
   bpy.utils.register_class(VIEW3D_MT_editor_menus)
 
 if __name__ == "__main__":
+    # unregister()
     register()

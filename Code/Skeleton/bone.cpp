@@ -228,10 +228,12 @@ Bone* Bone::find_bone(std::string bone_name)
   {
     Bone* bone;
     bone = _childrens[ichild].find_bone(bone_name);
-    if (bone != nullptr)
-    return bone;
+    if (bone != nullptr){
+      return bone;}
   }
-  Err_Print("The bone "+ bone_name +" was not find", "bone.cpp");
+  // if is_root:
+  // Err_Print("The bone "+ bone_name +" was not find", "bone.cpp");
+  // Pas bon, car on peut quitter une branche sans avoir fini...
   return nullptr;
 }
 

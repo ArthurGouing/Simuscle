@@ -129,6 +129,9 @@ void App::processInput(GLFWwindow *window)
 
   if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
     scale=false;
+
+  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    _timeline.play_button();
 }
 
 // Constructor
@@ -176,7 +179,7 @@ void App::Init()
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
   // Enable vsync
-  glfwSwapInterval(1);
+  glfwSwapInterval(1); // number of screen update to wait before sending render to the screen
   // Load extension's functions
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
@@ -355,9 +358,12 @@ void App::Run()
     _timeline.UI_pannel();
     _renderer->UI_pannel();
 
+    /********* Timeline ********/
+    _timeline.time_step();
+
     /******** Rendering ********/
     ImGui::Render();
-    _renderer->Draw();
+    _renderer->Draw(_timeline.get_frame());
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     /******** ??????? ********/

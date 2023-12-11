@@ -163,7 +163,7 @@ void Renderer::load_texture(std::string texture_path, unsigned int* textureid)
 }
 
 
-void Renderer::Draw()
+void Renderer::Draw(int frame)
 {
     // Framebuffer 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -193,9 +193,11 @@ void Renderer::Draw()
     // glUniform1i(matcapLoc, _mymatcap);
 
     glUseProgram(skin_shaderProgram);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_matcap);
     glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTexture"), 0);
+    //_skel->init_buffers();
     _skel->draw_skeleton_mesh();
 
     glActiveTexture(GL_TEXTURE0);
@@ -203,6 +205,7 @@ void Renderer::Draw()
     glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTextureRed"), 0);
     _musclesys->update_VBO();
     _musclesys->draw_muscles();
+    _musclesys->draw_curves(frame);
 
     // Draw Skeleton
     // glUseProgram(shaderProgram);

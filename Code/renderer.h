@@ -46,7 +46,7 @@ class Renderer {
     // Skin         *_char;
 
     // Render a new frame 
-    void Draw();
+    void Draw(int frame);
     void UI_pannel();
 
     // methode

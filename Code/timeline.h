@@ -9,6 +9,7 @@
 #define TIMELINE_H
 
 #include "imgui.h"
+#include "Tools/tools.h"
 
 class Timeline
 {
@@ -19,9 +20,14 @@ class Timeline
 
     void time_step();
     void goto_frame(int frame);
+    int get_frame(){return _frame;};
 
+    // Play parameter
     bool is_paused;
+    void play_button();
 
+    // Loop parameter
+    bool is_loop;
     // User interface 
     void UI_pannel();
 

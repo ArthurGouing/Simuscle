@@ -1,5 +1,7 @@
 #include "muscle_system.h"
 
+using namespace glm;
+
 
 MuscleSystem::MuscleSystem(std::string project, Skeleton *skel) :
   _skel(skel)
@@ -52,33 +54,71 @@ void MuscleSystem::read_muscles_parameters(std::string file_name, std::string pr
     } else if (buff == "]") {
       return;
     }
+    Info_Print("name: "+name);
     info >> buff;
     if (buff == "\"geometry\":"){
       info >> buff;
-      geometry_path = project + "Muscles/" + buff.substr(1, buff.size()-2);
+      geometry_path = project + "Muscles/" + buff.substr(1, buff.size()-3);
     }
-    Info_Print("Create muscle : "+ name +", "+geometry_path);
-    Muscle muscle(name, geometry_path, bone_insertion_1, bone_insertion_2);
-    muscles.push_back(muscle);
-    continue;
+    Info_Print("geometry : "+geometry_path);
+    info >> buff;
     if (buff == "\"insertion_1\":"){
       info >> buff;
       bone_insertion_1 = _skel->find_bone(buff.substr(1, buff.size()-3));
-    } else {continue;}
+    }
+    Info_Print("Bone insertion 1: " + bone_insertion_1->_name);
     info >> buff;
     if (buff == "\"insertion_2\":"){
       info >> buff;
       bone_insertion_2 = _skel->find_bone(buff.substr(1, buff.size()-3));
-    } else {continue;}
-    // Add muscle to the muscles list
-    // Muscle muscle(name, geometry_path, bone_insertion_1, bone_insertion_2);
-    // muscles.push_back(muscle);
-
+    }
+    Info_Print("Bone insertion 2: " + bone_insertion_2->_name);
     info >> buff;
+    if (buff == "\"curve\":"){
+      Info_Print("TODO: read curve info");
+    }
+    info >> buff; // First degree "["
+    vec3 P0, P1, P2, P3;
+    P0 = read_point(info);
+    P1 = read_point(info);
+    P2 = read_point(info);
+    P3 = read_point(info);
+    info >> buff; // First degree "]"
+
+    int n_point = 32; // Choose nel ici !!!
+    std::string curve_name = name+"_curve";
+    Curve muscle_curve(curve_name, n_point, P0, P1, P2, P3);
+
+    // Add muscle to the muscles list
+    Muscle muscle(name, geometry_path, muscle_curve, bone_insertion_1, bone_insertion_2);
+    muscles.push_back(muscle);
+
+
+    info >> buff; // buff == },
+
     if(buff == "}"){
-      return;
+      info.close();
+      break;
     }
   }
+}
+
+vec3 MuscleSystem::read_point(std::ifstream& info)
+{
+  std::string buff;
+  glm::vec3 P;
+  info >> buff;
+  info >> buff;
+  std::stringstream ssbuffx(buff.substr(0, buff.size()-1));
+  ssbuffx >> P.x;
+  info >> buff;
+  std::stringstream ssbuffy(buff.substr(0, buff.size()-1));
+  ssbuffy >> P.y;
+  info >> buff;
+  std::stringstream ssbuffz(buff);
+  ssbuffz >> P.z;
+  info >> buff;
+  return P;
 }
 
 void MuscleSystem::update_VBO()
@@ -141,6 +181,51 @@ void MuscleSystem::draw_muscles()
   }
 
   glDrawElements(GL_TRIANGLES, n_values, GL_UNSIGNED_INT, 0);
+}
+
+void MuscleSystem::draw_curves(int frame){
+  glGenVertexArrays(1, &crv_VAO);
+  glGenBuffers(1, &crv_VBO);
+  glGenBuffers(1, &crv_EBO);
+  // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+  glBindVertexArray(crv_VAO);
+
+  // Update bonne position to the VBO
+  std::vector<glm::vec3> values;
+  std::vector<int>       indices;
+  //
+  values = muscles[0]._curve.curve_points;
+  for (int i = 0; i < values.size(); i++) {
+    values[i].z = muscles[0]._curve.curve_points[i].z - frame * 0.001;
+  }
+  n_point = values.size();
+  for (int i = 0; i < n_point-1; i++) {
+    indices.push_back(n_point-i-1);
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, crv_VBO);
+  glBufferData(GL_ARRAY_BUFFER, values.size() * 3 * sizeof(float), &(values[0]), GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, crv_EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), indices.data(), GL_STATIC_DRAW);
+  
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+  glEnableVertexAttribArray(0);
+  // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  n_values = 3 * n_point;
+
+  // std::vector<glm::vec3>().swap( values );
+  // std::vector<int>().swap( indices );
+
+  glBindVertexArray(crv_VAO);
+  glDisable(GL_DEPTH_TEST);
+  glLineWidth(4.f);
+  glDrawElements(GL_LINE_STRIP, n_values, GL_UNSIGNED_INT, 0);
+  glPointSize(8.f);
+  glDrawElements(GL_POINTS, n_values, GL_UNSIGNED_INT, 0);
+  glEnable(GL_DEPTH_TEST);
 }
 
 MuscleSystem::~MuscleSystem()

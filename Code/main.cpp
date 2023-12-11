@@ -20,7 +20,7 @@ int main()
   // Geometry mesh("../Blender_scene/Human_triangulate.off");
   // Geometry mesh("../Blender_scene/Sphere.off");
   // Select the directory of the project
-  std::string project = "../Blender_scene/Test/";
+  std::string project = "../Blender_scene/Arm_Simuscle/";
   Skeleton skeleton(project/*, Timeline or SimulationManager*/);
   MuscleSystem muscles(project, &skeleton);
   //Skin character(project, &skeleton, &muscles);

@@ -61,6 +61,7 @@ class App {
     void mouse_scroll_event(double yoffset);
     void mouse_button_event(int button, int action, int mods);
 
+
     // Sensibility movement
     float sensi_rot;
     float sensi_mov;
