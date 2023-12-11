@@ -9,6 +9,7 @@ def export_simuscle(context, filepath, use_some_setting):
     os.mkdir(filepath)
     os.mkdir(filepath+"/Muscles")
     os.mkdir(filepath+"/Bones")
+    
     # Export Bones
     bones = [obj for obj in bpy.data.collections["Skeleton"].objects if obj.parent is not None]
     print(bones)
@@ -16,34 +17,35 @@ def export_simuscle(context, filepath, use_some_setting):
     bone_file = open(file + ".json", "w")
     bone_file.write("[\n")
     for i, bone in enumerate(bones):
-        is_last = i ==len(bones)
+        is_last = i ==(len(bones)-1)
         bone_file.write(bone_info(bone, is_last))
         print("Write "+bone.name, end=" ")
         path_file = filepath+"/Bones/"+bone.name
         export_mesh(path_file, bone)
         print(f"(written in {time()-t:3f} sec)")
         t = time()
-    bone_file.write("]")
     bone_file.close()
     t_bone = t
+    
     # Export Muscles
     muscles = [obj for obj in bpy.data.collections["Muscles"].objects if obj.type=='MESH']
     for coll in bpy.data.collections["Muscles"].children_recursive:
         muscles += [obj for obj in coll.objects if obj.type=='MESH']
     file = filepath+"/Muscles/muscles_info"
     muscle_file = open(file + ".json", "w")
-    muscle_file.write("[\n")
+    muscle_file.write("[")
     for i, muscle in enumerate(muscles):
-        is_last = i==len(muscles)
+        is_last = i==(len(muscles)-1)
         muscle_file.write(muscle_info(muscle, is_last))
         print("Write "+muscle.name, end="")
         path_file = filepath+"/Muscles/"+muscle.name.replace(" ", "_")
         export_mesh(path_file, muscle)
         print(f"(written in {time()-t:.3f} sec)")
         t = time()
-    muscle_file.write("]")
+    muscle_file.write("\n]")
     muscle_file.close()
     t_muscle = t
+    
     # Export Skin
     skin = bpy.data.collections["Skin"].objects[0]
     path_file = filepath+"/skin"
@@ -52,6 +54,7 @@ def export_simuscle(context, filepath, use_some_setting):
     print(f"(written in {time()-t:.3f} sec)")
     t = time()
     t_skin = t
+    
     # Export animation
     print("Write ", skin.parent.name, end="")
     path_file = filepath+"/animation"
@@ -65,6 +68,8 @@ def export_simuscle(context, filepath, use_some_setting):
 
     return {'FINISHED'}
 
+
+
 def bone_info(bone, is_last):
     """ Return JSON formated string containing all bone info"""
     info  = '  {\n'
@@ -77,24 +82,35 @@ def bone_info(bone, is_last):
         info += '  },\n'
     return info
 
+
+
 def muscle_info(muscle, is_last):
     """ Return JSON formated string containing all muscle info (curve)"""
     start_target = bpy.data.objects.get("start_target_"+muscle.name)
     end_target = bpy.data.objects.get("end_target_"+muscle.name)
-    info =   '  {\n'
+    curve = bpy.data.objects.get("curve_"+muscle.name)
+    p0 = curve.data.splines[0].bezier_points[0].co
+    p1 = curve.data.splines[0].bezier_points[0].handle_right
+    p2 = curve.data.splines[0].bezier_points[1].handle_left
+    p3 = curve.data.splines[0].bezier_points[1].co
+    bezier_points = [p0, p1, p2, p3]
+    info =   '\n  {\n'
     info += f'    "name": "{muscle.name}",\n'
-    info += f'    "geometry": "{muscle.name.replace(" ", "_")}.off"\n'
-    # if start_target:
-    #     info += f'    "curve_start": [{start_target.location[0]}, {start_target.location[1]}, {start_target.location[2]}],\n'
-    #     info += f'    "bone_start": "{start_target.parent_bone}",\n'
-    # if end_target:
-    #     info += f'    "curve_end": [{end_target.location[0]}, {end_target.location[1]}, {end_target.location[2]}],\n'
-    #     info += f'    "bone_end": "{end_target.parent_bone}",\n'
-    # if is_last:
-    #     info += '  }\n]'
-    # else:
-    #     info += '  },\n'
+    info += f'    "geometry": "{muscle.name.replace(" ", "_")}.off",\n'
+    info += f'    "insertion_1": "{start_target.parent_bone}",\n'
+    info += f'    "insertion_2": "{end_target.parent_bone}",\n'
+    info += f'    "curve": ['
+    for i, p in enumerate(bezier_points):
+        info+= f' [{p.x}, {p.y}, {p.z}]'
+        if i!=len(bezier_points)-1:
+            info += ','
+    info +=  f' ]\n'
+    if is_last:
+        info += '  }'
+    else:
+        info += '  },'
     return info
+
 
 
 def export_mesh(file_name, obj):
@@ -140,9 +156,11 @@ def export_mesh(file_name, obj):
 def export_anim(file_name, armature):
     # Open the files
     bpy.context.view_layer.objects.active = armature
+    start_frame = bpy.context.scene.frame_start
+    end_frame = bpy.context.scene.frame_end
     bpy.ops.export_anim.bvh(filepath=file_name + ".bvh",
-                            frame_start=0,
-                            frame_end=300)
+                            frame_start=start_frame,
+                            frame_end=end_frame)
 
 # ExportHelper is a helper class, defines filename and
 # invoke() function which calls the file selector.
@@ -204,7 +222,8 @@ def unregister():
 
 
 if __name__ == "__main__":
-    filepath = "/home/arthos/Simuscle/Blender_scene/Test"
-    export_simuscle(bpy.context, filepath, "True")
-    # register()
+    filepath = "/home/arthos/Simuscle/Blender_scene/Test_2"
+    # export_simuscle(bpy.context, filepath, "True")
+    # unregister()
+    register()
 

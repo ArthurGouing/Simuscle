@@ -60,7 +60,6 @@ void Skeleton::init_buffers()
 
   n_values = 6 * values.size();
 
-  Info_Print("Done");
   values.clear();
   indices.clear();
 }
@@ -92,6 +91,7 @@ void Skeleton::draw_skeleton_mesh(bool wire_mode)
   glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glDrawElements(GL_TRIANGLES, n_values, GL_UNSIGNED_INT, 0);
+  // glDrawElements(GL_TRIANGLES, n_values, GL_UNSIGNED_INT, 0);
 
   // Draw the skeleton
   // glBindVertexArray(VAO);

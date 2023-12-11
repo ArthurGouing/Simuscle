@@ -9,24 +9,26 @@ import sys
 import os
 
 if __name__=="__main__":
-    dir = r"C:\Users\picol\Documents\Simuscle\Script"
+    dir = r"/home/arthos/Simuscle/Script"
     print(dir)
     print(sys.path)
     if not dir in sys.path:
-        sys.path.append(dir )
+        sys.path.insert(0, dir)
         print(dir)
 
 
-from . import Muscle_add
+# import Muscle_add
 if __name__=="__main__":
     import Muscle_add
     # from Muscle_add import AddMuscleOperator, create_muscle
 else:
+    import Muscle_add
     if "bpy" in locals():
         import importlib
         importlib.reload(Muscle_add)
     else:
-        from . import Muscle_add
+        import Muscle_add
+        # from . import Muscle_add
 
 
 class OBJECT_OT_add_object(Operator, AddObjectHelper):

@@ -1,7 +1,10 @@
+#ifndef MUSCLE_CPP
+#define MUSCLE_CPP
+
 #include "muscle.h"
 
-Muscle::Muscle(std::string name, std::string geometry_path, Bone* insertion_begin, Bone* insertion_end) :
-  _name(name), _geometry_path(geometry_path), 
+Muscle::Muscle(std::string name, std::string geometry_path, Curve muscle_curve, Bone* insertion_begin, Bone* insertion_end) :
+  _name(name), _geometry_path(geometry_path), _curve(muscle_curve),
   _insertion_begin(insertion_begin), _insertion_end(insertion_end)
 {
 }
@@ -21,3 +24,5 @@ Muscle::~Muscle()
 {
 
 }
+
+#endif // !MUSCLE_CPP
