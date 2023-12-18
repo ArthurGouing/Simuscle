@@ -6,7 +6,8 @@
 Skeleton::Skeleton()
 {}
 
-Skeleton::Skeleton(std::string project)
+Skeleton::Skeleton(std::string project):
+  reset_pose(false)
 {
   Title_Print("Init Skeleton");
 
@@ -14,6 +15,8 @@ Skeleton::Skeleton(std::string project)
   std::string bvh_file = project+"animation.bvh";
   Info_Print("Reading BVH file : " + bvh_file);
   Root_Bone.create_from_file(bvh_file);
+  _nb_frames = Root_Bone._nb_frames;
+
   // Root_Bone.print_bone();
 
   /******** Read Bones parameters ********/
@@ -36,15 +39,31 @@ void Skeleton::init_buffers()
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
   glGenBuffers(1, &EBO);
+
+  // Init indices array
+  Root_Bone.set_indices(&indices);
+
+  // Init values array
+  int values_size=0;
+  Root_Bone.get_values_size(&values_size);
+  values.resize(values_size); // values need to be init before computing his values
+  n_values = 6 * values_size + 10000;
+  // n_values = 6 * values_size; // TODO: erreur, the n_values is not correct. I have no clues why that...
+
+  // Set VBO and sent it to the GPU
+  // Root_Bone.update_values(&values, 0, reset_pose); // useless already in update_buffers
+  update_buffers(0);
+}
+
+void Skeleton::update_buffers(int frame)
+{
+  // Compute new values at the frame 
+  Root_Bone.compute_transform(frame);
+  Root_Bone.update_values(&values, frame, reset_pose);
+
   // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
   glBindVertexArray(VAO);
 
-  // Update bonne position to the VBO
-  std::vector<glm::vert_arr> values;
-  std::vector<int>           indices;
-
-  Root_Bone.update_values(&values, &indices);
- 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, values.size() * 6 * sizeof(float), &(values[0]), GL_STATIC_DRAW);
 
@@ -57,18 +76,13 @@ void Skeleton::init_buffers()
   glEnableVertexAttribArray(1);
   // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  n_values = 6 * values.size();
-
-  values.clear();
-  indices.clear();
 }
 
 void Skeleton::draw_skeleton_stick()
-{
   /* Draw all the bones of the skeleton in the OpenGL pipline.
    * mode wire i.e. draw skeleton as a set of OpenGL_Line
    */
+{
   Info_Print("Stick case");
   // Update bone position to the VBO
   // TODO:
@@ -106,11 +120,22 @@ Bone* Skeleton::find_bone(std::string bone_name)
 {
   Bone* bone = nullptr;
   bone = Root_Bone.find_bone(bone_name);
+  if (bone==nullptr) {
+    Root_Bone.print_bone();
+    Err_Print("The bone '" + bone_name + "' doesn't belong to the skelton.", "skeleton.cpp");
+  }
   return bone;
 }
 
+void Skeleton::UI_pannel()
+{
+  ImGui::Begin("Skeleton parameters");
+  ImGui::Checkbox("Reset pose", &reset_pose);
+  ImGui::End();
+}
 
 Skeleton::~Skeleton()
-{}
+{
+}
 
 #endif // !SKELETON_CPP

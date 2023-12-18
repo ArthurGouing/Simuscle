@@ -29,7 +29,6 @@
 
 class Geometry {
   public:
-
     Geometry(std::vector<float> *vertices, std::vector<int> *indices);
     Geometry(std::string file);
     Geometry();

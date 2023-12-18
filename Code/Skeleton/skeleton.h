@@ -27,6 +27,7 @@ class Skeleton
     // Renderer renderer; 
 
     void init_buffers();
+    void update_buffers(int frame);
 
     void draw_skeleton_stick();
     void draw_skeleton_mesh(bool wire_mode=false);
@@ -37,17 +38,30 @@ class Skeleton
     void set_mode(std::string mode) {render_mode = mode;};
     void set_time(float time);
 
+    void UI_pannel();
   private:
     Timeline *_time; //
 
   // Variable
+  public:
+    // number of frame
+    int _nb_frames;
+
   private:
     // The mode the way the skeleton is rendered
     std::string render_mode; // choice: ["stick", "wire", "mesh"]
+
+    // Geometry vector
+    std::vector<glm::vert_arr> values;
+    std::vector<int>           indices;
+
     // OpenGL Buffers
     unsigned int VAO, VBO, EBO;
     // Number of faces to render
     int n_values;
+
+    // parmeters
+    bool reset_pose;
 
 };
 #endif // !SKELETON_H

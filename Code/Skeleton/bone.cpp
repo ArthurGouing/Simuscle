@@ -26,12 +26,14 @@ Token find_tok(std::string buff)
 Bone::Bone()
 {}
 
-Bone::Bone(std::string file_name)
+Bone::Bone(std::string file_name):
+  _indice_offset(0), _nb_frames(0), transformation(1.0)
 {
   create_from_file(file_name);
 }
 
-Bone::Bone(std::ifstream& anim_file, std::string name, Bone *parent)
+Bone::Bone(std::ifstream& anim_file, std::string name, Bone *parent):
+  _indice_offset(0), _nb_frames(0), transformation(1.0)
 {
   parse_bone(anim_file, name, parent);
 }
@@ -98,6 +100,12 @@ void Bone::parse_bone(std::ifstream& anim_file, std::string name, Bone* parent)
       anim_file >> offX; anim_file >> offY; anim_file >> offZ;
       // Store values
       _offset = vec3(offX, offY, offZ);
+      // construct the posistion of the bone
+      if (parent==nullptr)  {
+        _pos = _offset;
+      } else {
+        _pos = parent->_pos + _offset;
+      }
 
     } else if (buff=="CHANNELS") {
       // Get channels size
@@ -111,7 +119,7 @@ void Bone::parse_bone(std::ifstream& anim_file, std::string name, Bone* parent)
         anim_file >> buff;
         _dofs[i].name = buff;
         if (buff=="Xrotation")
-          order_count += 100*(i%3+1); // TODO: improve, will buf if nbuff != 3 or 6
+          order_count += 100*(i%3+1); // TODO: improve, will bug if nbuff != 3 or 6
         if (buff=="Yrotation")
           order_count += 10*(i%3+1);
         if (buff=="Zrotation")
@@ -148,7 +156,7 @@ void Bone::parse_frames(std::ifstream& anim_file)
   // Add Dof value
   for (int dof = 0; dof < _dofs.size(); dof++)
   {
-    double dof_value;
+    float dof_value;
     anim_file >> dof_value;
     _dofs[dof]._values.push_back(dof_value);
   }
@@ -171,6 +179,7 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
       for (int i = 0; i < _mesh.face_indices.size(); i++){
         _mesh.face_indices[i] += *indice_offset;
       }
+      _indice_offset = *indice_offset;
       *indice_offset += _mesh.n_verts;
       break;
     }
@@ -181,13 +190,83 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
   }
 }
 
-void Bone::update_values(std::vector<glm::vert_arr>* values,std::vector<int>* indices)
-  // Update recursively geometry to the VAO for every bones
+void Bone::set_indices(std::vector<int>* indices)
 {
-  values->insert(values->end(), _mesh.vert_values.begin(), _mesh.vert_values.end());
   indices->insert(indices->end(), _mesh.face_indices.begin(), _mesh.face_indices.end());
   for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
-    _childrens[ichild].update_values(values, indices);
+    _childrens[ichild].set_indices(indices);
+  }
+}
+
+void Bone::get_values_size(int* values_size)
+{
+  *values_size += _mesh.n_verts;
+  for (int ichild = 0; ichild < _childrens.size(); ichild++) {
+    _childrens[ichild].get_values_size(values_size);
+  }
+}
+
+void Bone::compute_transform(int frame, mat4 parent_transform)
+{
+  mat4 localtransform = mat4(1.0);
+  // if (frame >= _nb_frames)
+  //   frame = _nb_frames-1;
+
+  // translate - la posistion du bone
+  vec3 current_trans = _pos;
+  // current_trans = vec3(0., 0., 1.0);
+  localtransform = translate(localtransform, current_trans);
+  if (_dofs.size()==3) // Only rotation
+  {
+    // rotate the bone
+    //
+    localtransform = rotate(localtransform, radians(_dofs[0].get_value(frame)), vec3( 1.0, 0.0, 0.0)); //TODO: les stocker en float directement
+    localtransform = rotate(localtransform, radians(_dofs[1].get_value(frame)), vec3( 0.0, 1.0, 0.0));
+    localtransform = rotate(localtransform, radians(_dofs[2].get_value(frame)), vec3( 0.0, 0.0, 1.0));
+  }
+  else if (_dofs.size()==6) // Rotation and Translation
+  {
+    vec3 trans = vec3(_dofs[0].get_value(frame), _dofs[1].get_value(frame), _dofs[2].get_value(frame)) - _offset;
+    localtransform = translate(localtransform, trans);
+    localtransform = rotate(localtransform, radians(_dofs[3].get_value(frame)), vec3( 1.0, 0.0, 0.0));
+    localtransform = rotate(localtransform, radians(_dofs[4].get_value(frame)), vec3( 0.0, 1.0, 0.0));
+    localtransform = rotate(localtransform, radians(_dofs[5].get_value(frame)), vec3( 0.0, 0.0, 1.0));
+  }
+  else if (_dofs.size()==0)
+  {
+    return;
+  }
+  else 
+  {
+    Err_Print("For now, only 3 or 6 Channels or supported (not compatible bvh).\nThe following channels format are actually supported:\n CHANNELS 6 Xposition Yposition Zposition Xrotation Yrotation Zrotation\nCHANNELS 3 Xrotation Yrotation Zrotation", "bone.cpp");
+  }
+  // translate + la posistion du bone
+  localtransform = translate(localtransform, -current_trans);
+  
+  //
+  transformation = parent_transform * localtransform;
+  // Recursive
+  for (int ichild = 0; ichild < _childrens.size(); ichild++) {
+    _childrens[ichild].compute_transform(frame, transformation);
+  }
+}
+
+void Bone::update_values(std::vector<glm::vert_arr>* values, int frame, bool reset_pose)
+  // Update recursively geometry to the VAO for every bones
+{
+  for (int i = 0; i < _mesh.n_verts; i++) {
+    // values->at(i + _indice_offset) = _mesh.vert_values[i];
+    if (reset_pose) {
+      values->at(i + _indice_offset) = _mesh.vert_values[i];
+    } else {
+      // TODO: cest transformation devrait être faite sur le GPU
+      values->at(i + _indice_offset).pos = vec3(transformation * vec4(_mesh.vert_values[i].pos, 1));
+      values->at(i + _indice_offset).normal = vec3(transformation * vec4(_mesh.vert_values[i].normal, 0));
+    }
+  }
+  // Recursive
+  for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
+    _childrens[ichild].update_values(values, frame, reset_pose);
   }
 }
 
@@ -231,9 +310,6 @@ Bone* Bone::find_bone(std::string bone_name)
     if (bone != nullptr){
       return bone;}
   }
-  // if is_root:
-  // Err_Print("The bone "+ bone_name +" was not find", "bone.cpp");
-  // Pas bon, car on peut quitter une branche sans avoir fini...
   return nullptr;
 }
 

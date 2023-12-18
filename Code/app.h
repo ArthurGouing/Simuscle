@@ -35,7 +35,7 @@
 class App {
   public:
     // Constructor
-    App(Renderer* renderer);
+    App(Renderer* renderer, Skeleton* skeleton, MuscleSystem* muscles);
     // Init
     void Init();
     // Run
@@ -44,6 +44,8 @@ class App {
     ~App();
 
     // Inner Classs
+    Skeleton         *_skel;
+    MuscleSystem     *_musc;
     Renderer         *_renderer;
     Timeline          _timeline;
     // SimulationManager _simulator;
@@ -85,8 +87,13 @@ class App {
     bool mov;
     bool scale;
 
-    // Test
-    float img_size;
-    glm::vec2 pannel_size;
+  int lastframe; // a mettre dans timeline plutot
+
+  //UI parameters
+  bool is_simulating;
+
+  // Test
+  float img_size;
+  glm::vec2 pannel_size;
 };
 #endif // !APP_H

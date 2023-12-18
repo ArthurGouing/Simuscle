@@ -13,6 +13,8 @@
 #include <iomanip>
 #include "imgui.h"
 #include <glm/glm.hpp>
+#include "Eigen_src/Sparse"
+#include "Eigen_src/Dense"
 
 // Printing tools
 void Title_Print(std::string msg, bool ansi_color=true);
@@ -21,6 +23,7 @@ void Warn_Print(std::string msg, bool ansi_color=true);
 void Err_Print(std::string msg, std::string file, bool ansi_color=true);
 void Mat4_Print(std::string msg, glm::mat4 mat, bool ansi_color=true);
 void Vec3_Print(std::string msg, glm::vec3 vec, bool ansi_color=true);
+void Size_Print(std::string msg, Eigen::MatrixXf mat, bool ansi_color=true);
 
 // ImGui tools
 static void HelpMarker(const char* desc)

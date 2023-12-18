@@ -99,9 +99,13 @@ class Renderer {
     std::string skel_mode; // choice: ["stick", "wire", "mesh]
     std::string muscle_mode; // choice: ["curve", "wire", "mesh"]
     // std::string skin_mode; // choice; ["wire", "mesh"]
+  
+    // UI variables
+    bool is_show_curves;
 
     // Texture variable
     int width, height, nrChannels;
+    int last_frame;
 
 };
 
