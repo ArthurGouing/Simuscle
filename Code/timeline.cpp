@@ -9,7 +9,7 @@ Timeline::Timeline() :
   _first_frame(0), _last_frame(120),
   _frame(0), _time(0.0f),
   _fps(24.0f), _dtframe(1.0f/24.0f),
-  is_paused(false), is_loop(true)
+  is_paused(true), is_loop(false)
 {
 
 }
@@ -72,7 +72,14 @@ void Timeline::UI_pannel()
   ImGui::Begin("Timeline");
   if (ImGui::Button("Play/Pause"))
     play_button();
-  ImGui::DragInt("Frame", &_frame, 1, _first_frame, _last_frame-1);
+  if (ImGui::Button("Loop")){
+    if (is_loop){
+      is_loop=false;
+    } else {
+      is_loop=true;
+    }
+  }
+  ImGui::InputInt("Frame", &_frame); //, 1, _first_frame, _last_frame);
   // ImGui::SeparatorText("frame n°X");
   // int n_frame = _last_frame - _first_frame; 
   // float arr[n_frame] = { };

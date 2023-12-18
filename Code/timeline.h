@@ -16,6 +16,7 @@ class Timeline
   public:
     Timeline();
     Timeline(float fps, int first_frame, int last_frame);
+    void set_last_frame(int nb_frames){_last_frame=nb_frames-1;};
     ~Timeline();
 
     void time_step();

@@ -25,11 +25,11 @@ class AnimCurve
     AnimCurve()  {};
     ~AnimCurve() {_values.clear();};
 
-    double get_values(int frame)  {/*TODO*/};
-    double get_values(float time) {/*TODO*/};
+    float get_value(int frame)  {return _values[frame];};
+    float get_value(float time) {/*TODO*/};
   public:
     std::string name; // Name of the dof
-    std::vector<double> _values; // values for all the frames
+    std::vector<float> _values; // values for all the frames
 };
 
 class BonesInfo;
@@ -47,7 +47,13 @@ class Bone // = The joint class in SIA Project
 
     void create_from_file(std::string file_name);
     void create_geometry(BonesInfo info, std::string project_path, int* indice_offset);
-    void update_values(std::vector<glm::vert_arr>* values, std::vector<int>* indices);
+    void get_values_size(int* values_size);
+    // void get_indices_size(int* indices_size);
+    void set_indices(std::vector<int>* indices);
+    void update_values(std::vector<glm::vert_arr>* values, int frame, bool reset_pose=false);
+
+    void compute_transform(int frame, glm::mat4 parent_transform = glm::mat4(1.0));
+
     Bone* find_bone(std::string bone_name);
     void print_bone(int level=0);
     
@@ -55,6 +61,10 @@ class Bone // = The joint class in SIA Project
     Geometry _mesh;
     std::vector<Bone> _childrens;
     std::string _name;
+    glm::mat4 transformation;
+
+    int _nb_frames; // a mettre dans timeline plutot
+    int _frame_time;// a mettre dans timeline plutot
    private:
     // static void create(std::string name, glm::vec3 offset, Bone* parent);
     void parse_bone(std::ifstream& anim_file, std::string name, Bone* parent);
@@ -66,15 +76,14 @@ class Bone // = The joint class in SIA Project
 
 
    private:
+    glm::vec3 _pos;
     glm::vec3 _offset; // peut etre en vec4 pour pouvoir faire les transform
     glm::vec3 _translation;
     glm::vec3 _rotation;
     RotateOrder _rorder;
 
-    int _nb_frames; // a mettre dans timeline plutot
-    int _frame_time;// a mettre dans timeline plutot
+    int _indice_offset;
 
-    // glm::mat4 transformation;
     // glm::mat4 trans_only_rot;
     // glm::vec3 translation_2;
     // glm::vec3 offset_2;

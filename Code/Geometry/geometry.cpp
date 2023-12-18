@@ -5,10 +5,12 @@
 
 using namespace glm;
 
-Geometry::Geometry()
+Geometry::Geometry():
+  n_verts(0), n_faces(0)
 {}
 
-Geometry::Geometry(std::string file)
+Geometry::Geometry(std::string file):
+  n_verts(0), n_faces(0)
 {
   create_from_file(file);
 }
@@ -16,7 +18,6 @@ Geometry::Geometry(std::string file)
 void Geometry::create_from_file(std::string file)
 {
   // Init
-  Info_Print(file);
   std::ifstream geom_file(file);
   std::string buff;
   float x, y, z;
@@ -26,7 +27,6 @@ void Geometry::create_from_file(std::string file)
   if (!geom_file.is_open())
     Err_Print("Cannot open "+file, "geometry.cpp");
   geom_file >> buff; 
-  Info_Print("buff: " + buff);
   std::getline(geom_file, buff);
   std::getline(geom_file, buff);
   std::stringstream ssbuff(buff);

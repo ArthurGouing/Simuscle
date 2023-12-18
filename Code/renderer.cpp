@@ -7,9 +7,10 @@ using namespace glm;
 
 Renderer::Renderer(Skeleton *skeleton, MuscleSystem *muscles):
   _skel(skeleton), _musclesys(muscles), skel_mode("mesh"), muscle_mode("mesh"),
-  zNear(0.1f), zFar(1500.0), fov(45.0),
+  zNear(0.01f), zFar(1500.0), fov(45.0),
   _cameradist(3.0f), _camerapos(vec3(0.0f, 0.0f, -1.0f)), 
-  _theta(90 * 6.2832/360), _mymatcap(true),
+  _theta(90 * 6.2832/360), _mymatcap(true), is_show_curves(true),
+  last_frame(0),
   _rotation(mat4(-0.71f, -0.03f,  -0.65f, 0.0f,
                   0.64f, -0.025f, -0.75f, 0.0f,
                   0.02f, -0.99f,   0.04f, 0.0f,
@@ -44,9 +45,10 @@ void Renderer::Init(int width, int height)
   glEnable(GL_DEPTH_TEST);
 
   /******** init geometry buffers ********/
-  Info_Print("set Vert Buff");
-  _musclesys->update_VBO();
+  Info_Print("set Vertex Object Buffers");
   _skel->init_buffers();
+  _musclesys->init_geom_buffers();
+  _musclesys->init_crv_buffers();
 
   /******** framebuffer configuration ********/
   Info_Print("Create Framebuffer");
@@ -197,15 +199,22 @@ void Renderer::Draw(int frame)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_matcap);
     glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTexture"), 0);
-    //_skel->init_buffers();
+    // if (frame!=last_frame) // avoid sending VBO to GPU if the points haven't changed
+    //_skel->update_buffers(frame);
     _skel->draw_skeleton_mesh();
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_muscle_matcap);
     glUniform1i(glGetUniformLocation(muscle_fragmentShader, "MatcapTextureRed"), 0);
-    _musclesys->update_VBO();
+
+    _musclesys->update_curve_buffers(frame); // if is simulating 
+    if (frame!=last_frame) // avoid sending VBO to GPU if the points haven't changed
+    _musclesys->update_geom_buffers(frame);
     _musclesys->draw_muscles();
-    _musclesys->draw_curves(frame);
+    if (is_show_curves) {
+      // glUseProgram(line_shaderProgram); //TODO make the shader and change the VBO update, and values format for curves
+      _musclesys->draw_curves(); // Il faut faire un shader special
+    }
 
     // Draw Skeleton
     // glUseProgram(shaderProgram);
@@ -225,6 +234,7 @@ void Renderer::Draw(int frame)
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // = unbind framebuffer
     // delete &modelLoc, &viewLoc, &thetaLoc;
+    last_frame = frame;
 }
 
 void Renderer::resize_fbo(int width, int height)
@@ -305,6 +315,7 @@ void Renderer::UI_pannel()
   ImGui::Begin("Render Settings");
   ImGui::SliderFloat("Light angle", &_theta, -2.f, 2.f);            // Edit 1 float using a slider from 0.0f to 1.0f
   ImGui::Checkbox("Ficed matcap", &_mymatcap);
+  ImGui::Checkbox("Show curves", &is_show_curves);
   ImGui::End();
 }
 

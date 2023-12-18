@@ -135,15 +135,17 @@ void App::processInput(GLFWwindow *window)
 }
 
 // Constructor
-App::App(Renderer* renderer) :
-  _renderer(renderer), /*_simulator(),*/ _timeline(),
+App::App(Renderer* renderer, Skeleton* skeleton, MuscleSystem* muscles) :
+  _renderer(renderer), /*_simulator(),*/ _skel(skeleton), _musc(muscles),
   size_window(1.7f), show_demo_window(true),  // GLFW variable
 
   sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(0.5f),                  // Camera control variable
   mouse_on_viewport(false), camera_is_moving(false), rot(false), mov(false), scale(false),
-  firstMouse(true),
-  img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f))
+  firstMouse(true), lastframe(0),
+  img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f)),
+  is_simulating(false)
 {
+  _timeline.set_last_frame(_skel->_nb_frames);
   Title_Print("Launch Simuscle App (with skeleton)");
   Info_Print("Commit  : ******");
   Info_Print("Modif   : 23/09/23");
@@ -179,7 +181,8 @@ void App::Init()
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
   // Enable vsync
-  glfwSwapInterval(1); // number of screen update to wait before sending render to the screen
+  glfwSwapInterval(0); // number of screen update to wait before sending render to the screen
+  //glfwSwapInterval(_swap_intercal);
   // Load extension's functions
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
@@ -357,9 +360,19 @@ void App::Run()
     UI_control_pannel(io);
     _timeline.UI_pannel();
     _renderer->UI_pannel();
+    _skel->UI_pannel();
+    _musc->UI_pannel();
 
     /********* Timeline ********/
     _timeline.time_step();
+
+
+    /********* Physics Solver ********/
+    if (lastframe!=_timeline.get_frame())
+    _skel->update_buffers(_timeline.get_frame());
+    if (is_simulating)
+      _musc->solve(_timeline.get_frame());
+
 
     /******** Rendering ********/
     ImGui::Render();
@@ -381,6 +394,8 @@ void App::Run()
 
     /******** Swat Buffers ********/
     glfwSwapBuffers(window);
+
+    lastframe = _timeline.get_frame();
   }
 
 }
@@ -411,6 +426,9 @@ void App::UI_control_pannel(ImGuiIO& io)
     _renderer->reset_view();
 
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+  ImGui::SeparatorText("Basic parameters");
+  ImGui::Checkbox("Simulate muscles physics", &is_simulating);
+
   ImGui::End();
 }
 

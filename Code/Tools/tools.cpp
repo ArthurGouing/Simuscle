@@ -73,6 +73,11 @@ void Vec3_Print(std::string msg, glm::vec3 vec, bool ansi_color)
   }
 }
 
+void Size_Print(std::string msg, Eigen::MatrixXf mat, bool ansi_color)
+{
+  std::cout << msg << "size->"<< mat.size()<<" ("<<mat.rows() <<", "<<mat.cols()<<")"<< std::endl;
+}
+
 // ImGui tools
 // static void HelpMarker(const char* desc)
 // {

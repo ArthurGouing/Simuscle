@@ -25,10 +25,10 @@ file(GLOB HEADERS glad.c */*.h)
 
 # Crée l'exécutable apartir des sources et des headers
 include_directories(${CMAKE_SOURCE_DIR})
-add_executable(exe ${SRCS} ${HEADERS})
+add_executable(simuscle ${SRCS} ${HEADERS})
 
 # Indique les librairie à utiliser
-target_link_libraries(exe ${LIBS})
+target_link_libraries(simuscle ${LIBS})
 # Install
 message(STATUS "Source dir: ${CMAKE_SOURCE_DIR}")
-install(TARGETS exe DESTINATION ${CMAKE_SOURCE_DIR})
+install(TARGETS simuscle DESTINATION ${CMAKE_SOURCE_DIR})

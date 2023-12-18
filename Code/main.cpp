@@ -20,12 +20,13 @@ int main()
   // Geometry mesh("../Blender_scene/Human_triangulate.off");
   // Geometry mesh("../Blender_scene/Sphere.off");
   // Select the directory of the project
+  // sstd::string project = "../Blender_scene/Arm_Simuscle/";
   std::string project = "../Blender_scene/Arm_Simuscle/";
   Skeleton skeleton(project/*, Timeline or SimulationManager*/);
   MuscleSystem muscles(project, &skeleton);
   //Skin character(project, &skeleton, &muscles);
   Renderer matcap_render(&skeleton, &muscles/*, &character*/);
-  App Simuscle_app(&matcap_render);
+  App Simuscle_app(&matcap_render, &skeleton, &muscles);
   Simuscle_app.Init();
 
   // Run the application
