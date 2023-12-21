@@ -79,7 +79,7 @@ class Bone // = The joint class in SIA Project
     glm::vec3 _pos;
     glm::vec3 _offset; // peut etre en vec4 pour pouvoir faire les transform
     glm::vec3 _translation;
-    glm::vec3 _rotation;
+    glm::quat _rotation;
     RotateOrder _rorder;
 
     int _indice_offset;

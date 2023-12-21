@@ -15,13 +15,14 @@
 #include "Skeleton/bone.h"
 #include "Tools/tools.h"
 #include <string>
+#include <glm/gtx/euler_angles.hpp>
 
 class Muscle
 {
   public:
     Muscle(){};
     Muscle(std::string name, std::string geometry_path, Bone* insertion_begin, Bone* insertion_end,
-        int n_points, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3);
+        int n_points, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, Solver_param* solver_param);
     ~Muscle();
 
     void solve(int frame);
@@ -32,7 +33,6 @@ class Muscle
 
     // UI functions
     void UI_pannel();
-    void toogle_gravity(); // useless
 
   public:
     std::string _name;
@@ -48,6 +48,9 @@ class Muscle
     Bone* _insertion_end;
 
     int _id_offset;
+
+    // UI variables
+    float _rx, _ry, _rz;
 };
 
 #endif // !MUSCLE_H

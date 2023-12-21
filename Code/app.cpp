@@ -143,7 +143,7 @@ App::App(Renderer* renderer, Skeleton* skeleton, MuscleSystem* muscles) :
   mouse_on_viewport(false), camera_is_moving(false), rot(false), mov(false), scale(false),
   firstMouse(true), lastframe(0),
   img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f)),
-  is_simulating(false)
+  is_simulating(false), _swap_interval(3)
 {
   _timeline.set_last_frame(_skel->_nb_frames);
   Title_Print("Launch Simuscle App (with skeleton)");
@@ -181,8 +181,8 @@ void App::Init()
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
   // Enable vsync
-  glfwSwapInterval(0); // number of screen update to wait before sending render to the screen
-  //glfwSwapInterval(_swap_intercal);
+  // glfwSwapInterval(0); // number of screen update to wait before sending render to the screen
+  glfwSwapInterval(_swap_interval);
   // Load extension's functions
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
@@ -236,6 +236,8 @@ void App::Run()
   Info_Print("Running...");
   while (!glfwWindowShouldClose(window))
   {
+    Info_Print("");
+    Title_Print("New frame");
    // Input
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
@@ -428,6 +430,9 @@ void App::UI_control_pannel(ImGuiIO& io)
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
   ImGui::SeparatorText("Basic parameters");
   ImGui::Checkbox("Simulate muscles physics", &is_simulating);
+  ImGui::PushItemWidth(100);
+  if (ImGui::InputInt("Swap interval", &_swap_interval))
+    glfwSwapInterval(_swap_interval);
 
   ImGui::End();
 }

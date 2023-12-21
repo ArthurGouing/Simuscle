@@ -5,6 +5,11 @@
 
 using namespace glm;
 
+static glm::vec3 color = vec3(0.f, 0.f, 1.f);
+static float intensity = 0.5f;
+
+glm::mat4 Renderer::_vpmat;
+
 Renderer::Renderer(Skeleton *skeleton, MuscleSystem *muscles):
   _skel(skeleton), _musclesys(muscles), skel_mode("mesh"), muscle_mode("mesh"),
   zNear(0.01f), zFar(1500.0), fov(45.0),
@@ -194,7 +199,28 @@ void Renderer::Draw(int frame)
     // int matcapLoc = glGetUniformLocation(skin_shaderProgram, "my_matcap");
     // glUniform1i(matcapLoc, _mymatcap);
 
+    Line test_line(vec3(-2,0,0.f), vec3(1.0, 0.f, 0.f));
+    int n_line = 10;
+    for (int i = -n_line; i <= n_line; i++) {
+      test_line.setColor(intensity*vec3(1,1,1));
+      test_line.setVector(vec3(i,-n_line,0), vec3(0.f, 2*n_line, 0.f));
+      test_line.draw(_vpmat);
+      test_line.setVector(vec3(-n_line,i,0), vec3(2*n_line, 0.f, 0.f));
+      test_line.draw(_vpmat);
+    }
+
+    test_line.setVector(vec3(-2,0,0.2f), vec3(1.f, 0.f, 0.f));
+    test_line.setColor(vec3(1,0,0));
+    test_line.draw(_vpmat);
+    test_line.setVector(vec3(-2,0,0.2f), vec3(0.f, 1.f, 0.f));
+    test_line.setColor(vec3(0.f, 1.f, 0.f));
+    test_line.draw(_vpmat);
+    test_line.setVector(vec3(-2,0,0.2f), vec3(0.f, 0.f, 1.f));
+    test_line.setColor(color);
+    test_line.draw(_vpmat);
+
     glUseProgram(skin_shaderProgram);
+    // Vec3_Draw(vec3(0.f), vec3(0.f, 0.f, 1.f));
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_matcap);
@@ -216,20 +242,6 @@ void Renderer::Draw(int frame)
       _musclesys->draw_curves(); // Il faut faire un shader special
     }
 
-    // Draw Skeleton
-    // glUseProgram(shaderProgram);
-    // if (skel_mode=="stick") {
-    //   _skel->draw_skeleton_stick(); // replace set_buff + draw
-    // } else if (skel_mode=="mesh") {
-    //   _skel->draw_skeleton_mesh();
-    // } else if (skel_mode=="wire") {
-    //   _skel->draw_skeleton_mesh(true);
-    // } else {
-    //   Info_Print("Default case: the skeleton won't be draw");
-    // }
-
-    // Do the same for the skin and the muscles
- 
     // UnBind
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // = unbind framebuffer
@@ -310,12 +322,43 @@ void Renderer::reset_view()
   _cameradist = 3.0f;
 }
 
+void Renderer::Vec3_Draw(glm::vec3 pos, glm::vec3 vector)
+{
+  unsigned int VAO, VBO;
+  std::vector<float> vertices = {
+       pos.x, pos.y, pos.z,
+       pos.x + vector.x , pos.y + vector.y, pos.z + vector.z,
+  };
+  
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glBindVertexArray(VAO);
+ 
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
+ 
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+ 
+  glBindBuffer(GL_ARRAY_BUFFER, 0); 
+  glBindVertexArray(0); 
+ 
+  glBindVertexArray(VAO);
+  glDisable(GL_DEPTH_TEST);
+  glDrawArrays(GL_LINES, 0, 2);
+  glEnable(GL_DEPTH_TEST);
+}
+
 void Renderer::UI_pannel()
 {
   ImGui::Begin("Render Settings");
   ImGui::SliderFloat("Light angle", &_theta, -2.f, 2.f);            // Edit 1 float using a slider from 0.0f to 1.0f
   ImGui::Checkbox("Ficed matcap", &_mymatcap);
   ImGui::Checkbox("Show curves", &is_show_curves);
+  ImGui::SliderFloat("r", &color.x, 0, 1);
+  ImGui::SliderFloat("g", &color.y, 0, 1);
+  ImGui::SliderFloat("b", &color.z, 0, 1);
+  ImGui::SliderFloat("Intensity", &intensity, 0, 1);
   ImGui::End();
 }
 

@@ -87,10 +87,10 @@ void MuscleSystem::read_muscles_parameters(std::string file_name, std::string pr
     } else { Err_Print("Bad File structure", "muscle_system.cpp"); }
 
     // Create curve
-    int n_point = 12; 
+    int n_point = 5; 
 
     // Add muscle to the muscles list
-    Muscle muscle(name, geometry_path, bone_insertion_1, bone_insertion_2, n_point, P0, P1, P2, P3);
+    Muscle muscle(name, geometry_path, bone_insertion_1, bone_insertion_2, n_point, P0, P1, P2, P3, &solver_param);
     muscles.push_back(muscle);
 
     info >> buff; // buff == },
@@ -212,7 +212,8 @@ void MuscleSystem::init_crv_buffers()
       indices_crv.push_back(id_offset + j);
       indices_crv.push_back(id_offset + j+1);
     }
-    muscles[i]._curve.id_offset = id_offset;
+    muscles[i]._curve.set_id_offset(id_offset);
+    // muscles[i]._curve.id_offset = id_offset;
     id_offset += n_point;
   }
 
@@ -227,8 +228,8 @@ void MuscleSystem::update_curve_buffers(int frame)
   for (int i = 0; i < 1 /*muscles.size()*/; i++) {
     Deformations* deformation;
     deformation = muscles[i]._solver.get_solution();
-    if (muscles[i]._name=="Biceps")
-    deformation->print();
+    // if (muscles[i]._name=="Biceps")
+    // deformation->print();
     muscles[i]._curve.update_values(&values_crv, deformation);
   }
 }
@@ -268,13 +269,62 @@ void MuscleSystem::solve(int frame)
 
 void MuscleSystem::UI_pannel()
 {
+  static ImGuiComboFlags flags=0;
   ImGui::Begin("Muscles parameters");
   ImGui::PushItemWidth(200);
 
+  ImGui::SeparatorText("Render parameters");
   ImGui::DragInt("line width", &line_width, 0.05f, 0.f, 20.f);
   ImGui::DragInt("point width", &point_width, 0.05f, 0.f, 20.f);
-  ImGui::Checkbox("Gravity",&gravity);
-  static ImGuiComboFlags flags=0;
+
+  ImGui::SeparatorText("Solver parameters");
+  ImGui::Checkbox("Gravity", &solver_param.gravity);
+  ImGui::SliderInt("Kmax", &solver_param.kmax, 1, 100);
+  if (ImGui::InputInt("Substep", &solver_param.n_substep)) {
+    for (int i = 0; i < muscles.size(); i++) {
+      muscles[i]._solver.update_matrices();
+    }
+  }
+
+  ImGui::SliderFloat("Epsilon", &solver_param.epsilon, 0.0000001, 10);
+  const char* simu_type_choice[] = { "static", "dynamic_implicit", "dynamic_visc_implicit", "dynamic_explicit", "dynamic_visc_explicit"};
+  const char* preview = simu_type_choice[solver_param.methode];
+  if (ImGui::BeginCombo("Simulation type", preview, flags)) {
+    for (int i = 0; i < 5; i++) {
+      const bool is_selected = (solver_param.methode==i);
+      if (ImGui::Selectable(simu_type_choice[i], is_selected)) {
+        solver_param.methode = i;
+        for (int i = 0; i < muscles.size(); i++) {
+          muscles[i]._solver.update_matrices();
+        }
+      }
+      if (is_selected)
+        ImGui::SetItemDefaultFocus();
+    }
+    ImGui::EndCombo();
+  }
+  // ImGui::Combo("Simulation type", &solver_param.methode, simu_type_choice, IM_ARRAYSIZE(simu_type_choice));
+  const char* solver_type_choice[] = { "iteratif", "direct"};
+  const char* preview2 = solver_type_choice[solver_param.solver];
+  if (ImGui::BeginCombo("Solver type", preview2, flags)) {
+    for (int i = 0; i < 2; i++) {
+      const bool is_selected_2 = (solver_param.solver==i);
+      if (ImGui::Selectable(solver_type_choice[i], is_selected_2)) {
+        std::cout << i << " " << solver_param.solver << std::endl;
+        solver_param.solver = i;
+        std::cout << i << " " << solver_param.solver << std::endl;
+        for (int i = 0; i < muscles.size(); i++) {
+          muscles[i]._solver.update_matrices();
+        }
+      }
+      if (is_selected_2)
+        ImGui::SetItemDefaultFocus();
+    }
+    ImGui::EndCombo();
+  }
+  std::cout << "soolver: "<<solver_param.solver<<std::endl;
+
+  ImGui::SeparatorText("Muscles parameters");
   // get char length
   ImGui::Separator();
   static int item_current_idx = 0; // Here we store our selection data as an index.
@@ -296,7 +346,6 @@ void MuscleSystem::UI_pannel()
   }
   muscles[item_current_idx].UI_pannel();
   ImGui::End();
-  Info_Print("UI pannel done");
 }
 
 MuscleSystem::~MuscleSystem()
