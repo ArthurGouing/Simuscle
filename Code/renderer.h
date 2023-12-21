@@ -27,6 +27,16 @@
 #include "Muscles/muscle_system.h"
 #include "Tools/stb_image.h"
 #include "Tools/tools.h"
+#include "Tools/line.h"
+
+/* Faut refaire le renderer.
+ * Il faut le découper en plusieur classe, qui font le rendu d'un élément à la fois.
+ * On aura une classe par élément de rendu. i.e un skelete, un muscle, un curve, un vector, et un skin (pour l'instant)
+ * Et une classe qui chapote tout. Cette classe parrent s'occupera du calcul de la matrice de projection et du FrameBufferObject
+ * Les rendus seront pointer pour chacune des classes (muscle_system, skeleton, etc) qui pourront alors réaliser leur rendu,
+ * comme c'est le cas pour le moment.
+ * Cette méthode me permettra de définir de nouveaux shader, pour les différents type d'élément à rendre
+ */
 
 class Renderer {
   public:
@@ -47,6 +57,8 @@ class Renderer {
 
     // Render a new frame 
     void Draw(int frame);
+
+    // Draw UI Render pannel
     void UI_pannel();
 
     // methode
@@ -61,6 +73,8 @@ class Renderer {
     // other
     void reset_view();
 
+    static void Vec3_Draw(glm::vec3 pos, glm::vec3 vector);
+
     // to go private ??
     glm::mat4 _rotation;
     // Framebuffer variable
@@ -72,7 +86,8 @@ class Renderer {
   private:
     // Camera view variable
     float     zNear, zFar, fov;
-    glm::mat4 _vpmat, _view, _projection;
+    static glm::mat4 _vpmat;
+    glm::mat4 _view, _projection;
     glm::vec3 _camerapos;
     float     _cameradist;
 

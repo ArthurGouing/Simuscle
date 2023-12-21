@@ -7,11 +7,11 @@ using namespace glm;
 
 
 Muscle::Muscle(std::string name, std::string geometry_path, Bone* insertion_begin, Bone* insertion_end, 
-    int n_points, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3) :
+    int n_points, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, Solver_param* solver_param) :
   _name(name), _geometry_path(geometry_path), 
   _curve(name+"_curve", n_points, P0, P1, P2, P3),
   _insertion_begin(insertion_begin), _insertion_end(insertion_end),
-  _solver(n_points, &_curve)
+  _solver(n_points, _curve, solver_param)
 {
 }
 
@@ -38,29 +38,42 @@ void Muscle::solve(int frame)
 {
   Qpoint q_0, q_np1;
   q_0.pos = vec3(_insertion_begin->transformation * vec4(_curve.curve_points[0], 1.f)) - _curve.curve_points[0];
-  // q_0.rot = ... ;
+  float rx, ry, rz;
+  extractEulerAngleXYZ(_insertion_begin->transformation, rx, ry, rz);
+  // if (_name=="Biceps") {
+  //   ImGui::Begin("Test");
+  //   ImGui::SliderFloat("rx", &_rx, -6.28, 6.28);
+  //   ImGui::SliderFloat("rz", &_rz, -6.28, 6.28);
+  //   ImGui::SliderFloat("ry", &_ry, -6.28, 6.28);
+  //   ImGui::End();
+  // }
+  std::cout<<rx<<" "<<ry<<" "<<rz<<std::endl;
+  q_0.rot = vec3(rx, ry, rz);
   q_np1.pos = vec3(_insertion_end->transformation * vec4(_curve.curve_points[_curve.n_points-1], 1.f)) - _curve.curve_points[_curve.n_points-1];
-  // q_np1.rot = ... ;
+  extractEulerAngleXYZ(_insertion_end->transformation, rx, ry, rz);
+  q_np1.rot = vec3(rx, ry, rz);
+  // Vec3_Draw(q_0.pos, q_0.rot);
+  // Vec3_Draw(q_0.pos, vec3(1.f, 0.f, 0.f));
   _solver.solve_iteration(q_0, q_np1);
 }
 void Muscle::UI_pannel()
 {
   char name[_name.size()];
+  static float new_rho=100.f; // a remplacer par un static MaterialProperty a terme
   strcpy(name, _name.c_str());
   ImGui::SeparatorText(name);
   if (ImGui::Button("Impulse"))
     _solver.impulse = true;
 
-  ImGui::Text("On met ici tous les paramètres relatif au muscle selectioné !");
-}
+  ImGui::InputFloat("rho", &new_rho, 0.f, 10000.f);
 
-void Muscle::toogle_gravity()
-{
-  if (_solver.gravity) {
-    _solver.gravity = false;
-  } else {
-    _solver.gravity = true;
+  if (ImGui::Button("Rebuild Equations"))
+  {
+    for (int i = 0; i < _curve.n_elements; i++)
+      _curve.get_property(i)->set_rho(new_rho);
+    _solver.update_matrices();
   }
+  ImGui::Text("On met ici tous les paramètres relatif au muscle selectioné !");
 }
 
 Muscle::~Muscle()

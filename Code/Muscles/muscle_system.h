@@ -23,6 +23,7 @@
 #include "material_property.h"
 #include "Skeleton/skeleton.h"
 
+
 class MuscleSystem
 {
   public:
@@ -59,6 +60,7 @@ class MuscleSystem
 
     // Liste of muscles
     std::vector<Muscle> muscles;
+    Solver_param solver_param;
 
     // VBO for the muscles geometry
     unsigned int VAO, VBO, EBO;

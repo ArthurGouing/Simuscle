@@ -34,14 +34,11 @@ class Deformations
     void resize(int s){deform.resize(s);};
     Qpoint at(int i){return deform.at(i);};
     void update_deform(Eigen::SparseVector<float> x, Eigen::SparseVector<float> x_p){
-      Info_Print("x size: " + std::to_string(x.size()));
-      Info_Print("x contain: " + std::to_string(x.size()/6) + " points");
       Qpoint p0;
       p0.pos.x = x_p.coeffRef(0); p0.pos.y = x_p.coeffRef(1); p0.pos.z = x_p.coeffRef(2);
       p0.rot.x = x_p.coeffRef(3); p0.rot.y = x_p.coeffRef(4); p0.rot.z = x_p.coeffRef(5);
       deform[0] = p0;
       for (int i = 0; i < x.size()/6; i++) {
-        Info_Print(std::to_string(i));
         Qpoint p;
         p.pos.x = x.coeffRef(6*i + 0); p.pos.y = x.coeffRef(6*i + 1); p.pos.z = x.coeffRef(6*i + 2);
         p.rot.x = x.coeffRef(6*i + 3); p.rot.y = x.coeffRef(6*i + 4); p.rot.z = x.coeffRef(6*i + 5);
@@ -53,19 +50,11 @@ class Deformations
       deform[deform.size()-1] = pnp1;
 
     };
-    Deformations& operator=(Eigen::SparseVector<float> x){
-      for (int i = 1; i < x.size()/6; i++) {
-        Qpoint p;
-        p.pos.x = x.coeffRef(6*i + 0); p.pos.y = x.coeffRef(6*i + 1); p.pos.z = x.coeffRef(6*i + 2);
-        p.rot.x = x.coeffRef(6*i + 3); p.rot.y = x.coeffRef(6*i + 4); p.rot.z = x.coeffRef(6*i + 5);
-        deform[i] = p; // Note Eigen ne recommande pas d'utiliser les coeffRef, il faudra chercher une méthode plus opti
-      }
-      return *this;
-    };
     void print(){
       for (int i = 0; i < deform.size(); i++) {
         std::cout << "p"<<i<<" pos: "<<deform[i].pos.x <<" "<<deform[i].pos.y <<" "<<deform[i].pos.z<<"  |  ";
-        std::cout << "rot: "<<deform[i].rot.x<<" "<<deform[i].rot.y<<" "<<deform[i].rot.z<<" "<< std::endl;}
+        std::cout << "rot: "<<deform[i].rot.x<<" "<<deform[i].rot.y<<" "<<deform[i].rot.z<<" "<< std::endl;
+        }
     }
 
   private:
@@ -88,6 +77,7 @@ class Curve
 
     // float get_L(int element_id);
     MaterialProperty* get_property(int element_id){return &elements[element_id];};;
+    void set_id_offset(int new_id_offset){id_offset=new_id_offset;};
 
   public:
     std::string name;

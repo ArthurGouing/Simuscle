@@ -53,7 +53,6 @@ class MaterialProperty  // Rename en beam element
     };
     // Note After changing MaterialProperty, we must rebuild the matrix K
 
-  private:
     float pi;  // The pi value (3.14)
  
     glm::vec3 pts_1;

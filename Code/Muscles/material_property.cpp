@@ -7,7 +7,7 @@ using namespace glm;
 
 MaterialProperty::MaterialProperty():
   L(),
-  rho(1060), // soit une densité de 1,060
+  rho(1060.f), // soit une densité de 1,060
   r(0.1),    // 10cm
   E(150000), // 150 kPa
   nu(0.5),   // 0.5 as volume preservation is supposed

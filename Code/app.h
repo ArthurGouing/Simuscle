@@ -91,6 +91,7 @@ class App {
 
   //UI parameters
   bool is_simulating;
+  int _swap_interval;
 
   // Test
   float img_size;
