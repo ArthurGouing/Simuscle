@@ -12,7 +12,6 @@ void BonesInfo::read_info(std::string file_name)
 {
   std::ifstream info(file_name);
   std::string buff;
-  Info_Print("Read '"+file_name+"'");
   info >> buff;
   while(info.is_open())
   {
@@ -49,7 +48,7 @@ void BonesInfo::read_info(std::string file_name)
 
 void BonesInfo::print()
 {
-  for (int i = 0; i < list_info.size(); i++)
+  for (size_t i = 0; i < list_info.size(); i++)
   {
     Info_Print("Name   : "+list_info[i].name);
     Info_Print("Parent : "+list_info[i].parent);

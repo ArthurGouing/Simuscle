@@ -48,9 +48,6 @@ class Muscle
     Bone* _insertion_end;
 
     int _id_offset;
-
-    // UI variables
-    float _rx, _ry, _rz;
 };
 
 #endif // !MUSCLE_H

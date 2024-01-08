@@ -6,18 +6,16 @@
 #include <string>
 
 Timeline::Timeline() :
-  _first_frame(0), _last_frame(120),
+  is_paused(true), is_loop(false),
   _frame(0), _time(0.0f),
-  _fps(24.0f), _dtframe(1.0f/24.0f),
-  is_paused(true), is_loop(false)
+  _dtframe(1.0f/24.0f), _fps(24.0f),
+  _first_frame(0), _last_frame(120)
 {
-
 }
 
 Timeline::Timeline(float fps, int first_frame, int last_frame):
-  _first_frame(first_frame), _last_frame(last_frame),
-  _frame(first_frame),
-  _fps(fps)
+  _frame(first_frame), _fps(fps),
+  _first_frame(first_frame), _last_frame(last_frame)
 {
   _dtframe   = 1.0f/fps;
   _time = _frame * _dtframe; 

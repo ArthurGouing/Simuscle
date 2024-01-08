@@ -78,6 +78,33 @@ void Size_Print(std::string msg, Eigen::MatrixXf mat, bool ansi_color)
   std::cout << msg << "size->"<< mat.size()<<" ("<<mat.rows() <<", "<<mat.cols()<<")"<< std::endl;
 }
 
+void Vec3_Draw(glm::vec3 pos, glm::vec3 vector)
+{
+  unsigned int VAO, VBO;
+  std::vector<float> vertices = {
+       pos.x, pos.y, pos.z,
+       pos.x + vector.x , pos.y + vector.y, pos.z + vector.z,
+  };
+  
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glBindVertexArray(VAO);
+ 
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
+ 
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+ 
+  glBindBuffer(GL_ARRAY_BUFFER, 0); 
+  glBindVertexArray(0); 
+ 
+  glBindVertexArray(VAO);
+  glDisable(GL_DEPTH_TEST);
+  glDrawArrays(GL_LINES, 0, 2);
+  glEnable(GL_DEPTH_TEST);
+}
+
 // ImGui tools
 // static void HelpMarker(const char* desc)
 // {
@@ -90,4 +117,27 @@ void Size_Print(std::string msg, Eigen::MatrixXf mat, bool ansi_color)
 //         ImGui::EndTooltip();
 //     }
 // }
+
+GLenum glCheckError_(const char *file, int line)
+{
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR)
+    {
+        std::string error;
+        switch (errorCode)
+        {
+            case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+            case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+            case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+            // case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
+            // case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
+            case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+        }
+        std::cout << error << " | " << file << " (" << line << ")" << std::endl;
+    }
+    std::cout << "End of error list" << std::endl;
+    return errorCode;
+}
+
 #endif // !TOOL_CPP

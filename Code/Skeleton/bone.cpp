@@ -27,13 +27,13 @@ Bone::Bone()
 {}
 
 Bone::Bone(std::string file_name):
-  _indice_offset(0), _nb_frames(0), transformation(1.0)
+  transformation(1.0), _nb_frames(0), _indice_offset(0)
 {
   create_from_file(file_name);
 }
 
 Bone::Bone(std::ifstream& anim_file, std::string name, Bone *parent):
-  _indice_offset(0), _nb_frames(0), transformation(1.0)
+  transformation(1.0), _nb_frames(0), _indice_offset(0)
 {
   parse_bone(anim_file, name, parent);
 }
@@ -154,7 +154,7 @@ void Bone::parse_bone(std::ifstream& anim_file, std::string name, Bone* parent)
 void Bone::parse_frames(std::ifstream& anim_file)
 {
   // Add Dof value
-  for (int dof = 0; dof < _dofs.size(); dof++)
+  for (size_t dof = 0; dof < _dofs.size(); dof++)
   {
     float dof_value;
     anim_file >> dof_value;
@@ -162,7 +162,7 @@ void Bone::parse_frames(std::ifstream& anim_file)
   }
 
   // Recursive to childs
-  for (int ichild = 0; ichild < _childrens.size(); ichild++)
+  for (size_t ichild = 0; ichild < _childrens.size(); ichild++)
   {
     _childrens[ichild].parse_frames(anim_file);
   }
@@ -171,37 +171,55 @@ void Bone::parse_frames(std::ifstream& anim_file)
 void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice_offset)
 // Read bone_inf.json file to assigne the correct geometry to each bone
 {
-  for (int i = 0; i < info.list_info.size(); i++)
+  for (size_t i = 0; i < info.list_info.size(); i++)
   {
     if (info.list_info[i].parent == _name) {
+
       std::string geometry_file = project_path+"Bones/"+info.list_info[i].name+".off";
       _mesh.create_from_file(geometry_file);
-      for (int i = 0; i < _mesh.face_indices.size(); i++){
-        _mesh.face_indices[i] += *indice_offset;
+      for (int i = 0; i < _mesh.n_verts; i++){
+        _mesh.vertex_list[i].id += *indice_offset;
       }
-      _indice_offset = *indice_offset;
+      _mesh.offset_id = *indice_offset;
+      // Info_Print("id offset in mesh: "+std::to_string(_mesh.offset_id));
       *indice_offset += _mesh.n_verts;
+      Info_Print("id offset: "+std::to_string(*indice_offset));
+      Info_Print("info bone: "+info.list_info[0].name);
+      Info_Print(project_path);
+      // Info_Print("id offset in mesh: "+std::to_string(_mesh.offset_id));
       break;
     }
   }
   // Recursive child function
-  for (int ichild = 0; ichild < _childrens.size(); ichild++) {
+  for (size_t ichild = 0; ichild < _childrens.size(); ichild++) {
     _childrens[ichild].create_geometry(info, project_path, indice_offset);
   }
 }
 
+void Bone::link_geometry(Renderer* renderer)
+{
+  Info_Print("link bone geometry of "+_name);
+  renderer->add_object(&_mesh);
+
+  for (size_t ichild = 0; ichild < _childrens.size(); ichild++)
+  {
+    _childrens[ichild].link_geometry(renderer);
+  }
+
+}
+
 void Bone::set_indices(std::vector<int>* indices)
 {
-  indices->insert(indices->end(), _mesh.face_indices.begin(), _mesh.face_indices.end());
-  for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
-    _childrens[ichild].set_indices(indices);
-  }
+  // indices->insert(indices->end(), _mesh.face_indices.begin(), _mesh.face_indices.end());
+  // for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
+  //   _childrens[ichild].set_indices(indices);
+  // }
 }
 
 void Bone::get_values_size(int* values_size)
 {
   *values_size += _mesh.n_verts;
-  for (int ichild = 0; ichild < _childrens.size(); ichild++) {
+  for (size_t ichild = 0; ichild < _childrens.size(); ichild++) {
     _childrens[ichild].get_values_size(values_size);
   }
 }
@@ -246,7 +264,7 @@ void Bone::compute_transform(int frame, mat4 parent_transform)
   //
   transformation = parent_transform * localtransform;
   // Recursive
-  for (int ichild = 0; ichild < _childrens.size(); ichild++) {
+  for (size_t ichild = 0; ichild < _childrens.size(); ichild++) {
     _childrens[ichild].compute_transform(frame, transformation);
   }
 }
@@ -254,20 +272,21 @@ void Bone::compute_transform(int frame, mat4 parent_transform)
 void Bone::update_values(std::vector<glm::vert_arr>* values, int frame, bool reset_pose)
   // Update recursively geometry to the VAO for every bones
 {
-  for (int i = 0; i < _mesh.n_verts; i++) {
-    // values->at(i + _indice_offset) = _mesh.vert_values[i];
-    if (reset_pose) {
-      values->at(i + _indice_offset) = _mesh.vert_values[i];
-    } else {
-      // TODO: cest transformation devrait être faite sur le GPU
-      values->at(i + _indice_offset).pos = vec3(transformation * vec4(_mesh.vert_values[i].pos, 1));
-      values->at(i + _indice_offset).normal = vec3(transformation * vec4(_mesh.vert_values[i].normal, 0));
-    }
-  }
-  // Recursive
-  for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
-    _childrens[ichild].update_values(values, frame, reset_pose);
-  }
+  _mesh.set_transform(transformation);
+  // for (int i = 0; i < _mesh.n_verts; i++) {
+  //   // values->at(i + _indice_offset) = _mesh.vert_values[i];
+  //   if (reset_pose) {
+  //     values->at(i + _indice_offset) = _mesh.vert_values[i];
+  //   } else {
+  //     // TODO: cest transformation devrait être faite sur le GPU
+  //     values->at(i + _indice_offset).pos = vec3(transformation * vec4(_mesh.vert_values[i].pos, 1));
+  //     values->at(i + _indice_offset).normal = vec3(transformation * vec4(_mesh.vert_values[i].normal, 0));
+  //   }
+  // }
+  // // Recursive
+  // for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
+  //   _childrens[ichild].update_values(values, frame, reset_pose);
+  // }
 }
 
 void Bone::animate(float time)
@@ -291,7 +310,7 @@ void Bone::print_bone(int level)
 
   // Print structure
   std::cout << space << _name << std::endl;
-  for (int i = 0; i < _childrens.size(); i++) 
+  for (size_t i = 0; i < _childrens.size(); i++) 
   {
     _childrens[i].print_bone(level+1);
   }
@@ -303,7 +322,7 @@ Bone* Bone::find_bone(std::string bone_name)
   {
    return this;
   }
-  for (int ichild = 0; ichild < _childrens.size(); ichild++)
+  for (size_t ichild = 0; ichild < _childrens.size(); ichild++)
   {
     Bone* bone;
     bone = _childrens[ichild].find_bone(bone_name);

@@ -6,23 +6,25 @@
 using namespace glm;
 
 Geometry::Geometry():
-  n_verts(0), n_faces(0)
+  name("empty"), n_verts(0), n_faces(0), offset_id(0), _transformation(mat4(1.f))
 {}
 
 Geometry::Geometry(std::string file):
-  n_verts(0), n_faces(0)
+  name(file), n_verts(0), n_faces(0), offset_id(0), _transformation(mat4(1.f))
 {
   create_from_file(file);
 }
 
 void Geometry::create_from_file(std::string file)
 {
-  // Init
+  std::cout << "  " << file << std::endl;
+  // Declaration des variable
   std::ifstream geom_file(file);
   std::string buff;
   float x, y, z;
   int vert_on_face, id1, id2, id3;
   Vertex *v1, *v2, *v3;
+
   // Open file
   if (!geom_file.is_open())
     Err_Print("Cannot open "+file, "geometry.cpp");
@@ -37,26 +39,19 @@ void Geometry::create_from_file(std::string file)
   Info_Print("  Number of vertices = " + std::to_string(n_verts));
   Info_Print("  Number of faces = " + std::to_string(n_faces));
 
-  // Init vert_values
-  vert_arr vert_init;
-  vert_init.pos = vec3(0.0f);
-  vert_init.normal = vec3(0.0f);
-  vert_values.resize(n_verts, vert_init); // je devrais init les ptr des vertex_list et face_list ici
- 
   // Process vertex
   for (int id = 0; id < n_verts; id++)
   {
-    // Title_Print(std::to_string(id));
-      if (!std::getline(geom_file, buff)) {
-        Err_Print("The file suddently ended while processing vertex", "geometry.cpp");
-        exit(0);
-      }
+    if (!std::getline(geom_file, buff)) {
+      Err_Print("The file suddently ended while processing vertex", "geometry.cpp");
+      exit(0);
+    }
     std::stringstream ssbuff(buff); 
     ssbuff >> x; ssbuff >> y; ssbuff >> z;
     vec3 vert_pos = vec3(x, y, z);
-    vert_values[id].pos = vert_pos;
+    // vert_values[id].pos = vert_pos;
 
-    Vertex vert(id, &vert_values);
+    Vertex vert(id, vert_pos);
     vertex_list.push_back(vert);
   }
  
@@ -80,17 +75,16 @@ void Geometry::create_from_file(std::string file)
     // Create Faces
     Triangle tri(id, v1, v2, v3);
     face_list.push_back(tri);
-    // Create array for buffer
-    face_indices.push_back(id1); 
-    face_indices.push_back(id2); 
-    face_indices.push_back(id3); 
     // Add neighboor info // faire une fonction
     v1->add_face_neighbor(id); v2->add_face_neighbor(id); v3->add_face_neighbor(id);
-    v1->add_vert_neighbor(v2->_id); v1->add_vert_neighbor(v3->_id);
-    v2->add_vert_neighbor(v1->_id); v2->add_vert_neighbor(v3->_id);
-    v3->add_vert_neighbor(v1->_id); v3->add_vert_neighbor(v2->_id);
+    v1->add_vert_neighbor(v2->id); v1->add_vert_neighbor(v3->id);
+    v2->add_vert_neighbor(v1->id); v2->add_vert_neighbor(v3->id);
+    v3->add_vert_neighbor(v1->id); v3->add_vert_neighbor(v2->id);
   }
   compute_normals();
+
+  // Cleanning
+  geom_file.close();
   // Info_Print("End Read faces info");
   // std::cout << "nb values in face_indies : " << face_indices.size() << std::endl;
   // std::cout << "nb faces                 : " << face_indices.size()/3 << std::endl;
@@ -98,8 +92,7 @@ void Geometry::create_from_file(std::string file)
 }
 
 Geometry::Geometry(std::vector<float> *vertices, std::vector<int> *indices):
-  n_verts(vertices->size()/3), n_faces(indices->size()/3)
-  // vert_pos(*vertices), face_indices(*indices)
+  n_verts(vertices->size()/3), n_faces(indices->size()/3), _transformation(mat4(1.f))
 {
   float x, y, z;
   int id1, id2, id3;
@@ -107,10 +100,10 @@ Geometry::Geometry(std::vector<float> *vertices, std::vector<int> *indices):
   Info_Print("nb vertices: "+std::to_string(int(n_verts))+"|size: "+std::to_string(vertices->size()));
   Info_Print("nb indices: "+std::to_string(int(n_faces))+"|size :"+std::to_string(indices->size()));
   // Init Vertex array
-  vert_arr vert_init;
-  vert_init.pos = vec3(0.0f);
-  vert_init.normal = vec3(0.0f);
-  vert_values.resize(n_verts, vert_init); // je devrais init les ptr des vertex_list et face_list ici
+  // vert_arr vert_init;
+  // vert_init.pos = vec3(0.0f);
+  // vert_init.normal = vec3(0.0f);
+  // vert_values.resize(n_verts, vert_init); // je devrais init les ptr des vertex_list et face_list ici
   // Faire pareil avec tous les autres vector<Type> ??? ou juste lui car c'est un tableau de poiteur
   for (int id = 0; id < n_verts ; id++)
   {
@@ -118,9 +111,8 @@ Geometry::Geometry(std::vector<float> *vertices, std::vector<int> *indices):
     y = vertices->at(3*id + 1);
     z = vertices->at(3*id + 2);
     vec3 vert_pos = vec3(x, y, z);
-    vert_values[id].pos = vert_pos;
 
-    Vertex vert(id, &vert_values);
+    Vertex vert(id, vert_pos);
     vertex_list.push_back(vert);
   }
 
@@ -138,22 +130,13 @@ Geometry::Geometry(std::vector<float> *vertices, std::vector<int> *indices):
     // Create Faces
     Triangle tri(id, v1, v2, v3);
     face_list.push_back(tri);
-    // Create array for buffer
-    face_indices.push_back(id1);
-    face_indices.push_back(id2);
-    face_indices.push_back(id3);
     // Add neighboor info // faire une fonction
     v1->add_face_neighbor(id); v2->add_face_neighbor(id); v3->add_face_neighbor(id);
-    v1->add_vert_neighbor(v2->_id); v1->add_vert_neighbor(v3->_id);
-    v2->add_vert_neighbor(v1->_id); v2->add_vert_neighbor(v3->_id);
-    v3->add_vert_neighbor(v1->_id); v3->add_vert_neighbor(v2->_id);
+    v1->add_vert_neighbor(v2->id); v1->add_vert_neighbor(v3->id);
+    v2->add_vert_neighbor(v1->id); v2->add_vert_neighbor(v3->id);
+    v3->add_vert_neighbor(v1->id); v3->add_vert_neighbor(v2->id);
   }
   compute_normals();
-}
-
-Geometry::~Geometry()
-{
-  // TODO
 }
 
 void Geometry::compute_normals()
@@ -167,23 +150,15 @@ void Geometry::compute_normals()
 
 }
 
-void Geometry::set_Buffers()
+vert_arr Geometry::compute_value(int id)
 {
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
-
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, vert_values.size() * 6 * sizeof(float), &vert_values[0], GL_DYNAMIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, face_indices.size() * sizeof(float), face_indices.data(), GL_STATIC_DRAW); //TODO: use dynamic draw
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) 0);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glBindVertexArray(0);
+  vert_arr vert;
+  vert.pos = vec3(_transformation * vec4(vertex_list[id].pos, 1.f));
+  vert.normal = vec3(_transformation * vec4(vertex_list[id].normal, 1.f));
+  return vert;
 }
+
+Geometry::~Geometry()
+{}
+
 #endif // !GEOMETRY_CPP

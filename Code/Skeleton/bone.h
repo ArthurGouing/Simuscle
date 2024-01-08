@@ -18,6 +18,7 @@
 #include "bonesinfo.h"
 #include "Tools/tools.h"
 #include "Geometry/geometry.h"
+#include "Render/renderer.h"
 
 class AnimCurve
 {
@@ -26,7 +27,7 @@ class AnimCurve
     ~AnimCurve() {_values.clear();};
 
     float get_value(int frame)  {return _values[frame];};
-    float get_value(float time) {/*TODO*/};
+    // float get_value(float time) {/*TODO*/};
   public:
     std::string name; // Name of the dof
     std::vector<float> _values; // values for all the frames
@@ -47,6 +48,7 @@ class Bone // = The joint class in SIA Project
 
     void create_from_file(std::string file_name);
     void create_geometry(BonesInfo info, std::string project_path, int* indice_offset);
+    void link_geometry(Renderer* renderer); // TODO: à initégrer dans le create geom
     void get_values_size(int* values_size);
     // void get_indices_size(int* indices_size);
     void set_indices(std::vector<int>* indices);
@@ -57,6 +59,7 @@ class Bone // = The joint class in SIA Project
     Bone* find_bone(std::string bone_name);
     void print_bone(int level=0);
     
+  public: // Variables
     // Put it in private
     Geometry _mesh;
     std::vector<Bone> _childrens;
@@ -65,7 +68,8 @@ class Bone // = The joint class in SIA Project
 
     int _nb_frames; // a mettre dans timeline plutot
     int _frame_time;// a mettre dans timeline plutot
-   private:
+
+   private: // Variables
     // static void create(std::string name, glm::vec3 offset, Bone* parent);
     void parse_bone(std::ifstream& anim_file, std::string name, Bone* parent);
     void parse_frames(std::ifstream& anim_file);

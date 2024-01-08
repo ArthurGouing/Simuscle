@@ -17,20 +17,23 @@ class Timeline
     Timeline();
     Timeline(float fps, int first_frame, int last_frame);
     void set_last_frame(int nb_frames){_last_frame=nb_frames-1;};
-    ~Timeline();
 
     void time_step();
     void goto_frame(int frame);
     int get_frame(){return _frame;};
 
+    // User interface 
+    void UI_pannel();
+    void play_button();
+
+    ~Timeline();
+
+  public:  // Variables
     // Play parameter
     bool is_paused;
-    void play_button();
 
     // Loop parameter
     bool is_loop;
-    // User interface 
-    void UI_pannel();
 
   private:
     // Variable
@@ -39,6 +42,5 @@ class Timeline
     float _dtframe, _fps;
 
     int _first_frame, _last_frame;
-
 };
 #endif // !TIMELINE_H
