@@ -27,7 +27,10 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "Tools/tools.h"
-#include "renderer.h"
+#include "Render/render_manager.h"
+#include "Render/renderer.h"
+#include "Skeleton/skeleton.h"
+#include "Muscles/muscle_system.h"
 #include "timeline.h"
 #include "Geometry/geometry.h"
 
@@ -35,7 +38,7 @@
 class App {
   public:
     // Constructor
-    App(Renderer* renderer, Skeleton* skeleton, MuscleSystem* muscles);
+    App(RenderManager* r_manager, Skeleton* skeleton, MuscleSystem* muscles);
     // Init
     void Init();
     // Run
@@ -44,9 +47,9 @@ class App {
     ~App();
 
     // Inner Classs
+    RenderManager    *_r_manager;
     Skeleton         *_skel;
     MuscleSystem     *_musc;
-    Renderer         *_renderer;
     Timeline          _timeline;
     // SimulationManager _simulator;
 

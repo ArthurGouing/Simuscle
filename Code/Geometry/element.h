@@ -33,16 +33,17 @@ class Triangle;
 class Vertex {
   public:
     //Constructer
-    Vertex(int id, std::vector<glm::vert_arr> *vert_values);
+    Vertex(int id, glm::vec3 init_pos);
     // Vertex(int id, float x, float y, float z);
     Vertex(Vertex* vert);
+
+    // Compute normal
     void compute_vert_normal(std::vector<Triangle> *faces);
-    // Get
-    glm::vec3 get_pos() {return glm::vec3(_pos->x, _pos->y, _pos->z);};
-    // Variable
-    int _id;
-    glm::vec3 *_pos;
-    glm::vec3 *_normal;
+
+  public: // Variable
+    int id;
+    glm::vec3 pos;
+    glm::vec3 normal;
 
     void add_face_neighbor(int id_face);
     void add_vert_neighbor(int id_vert);
@@ -52,7 +53,6 @@ class Vertex {
     int n_vert_neighbor;
     std::vector<int> _face_neighbor;
     std::vector<int> _vert_neighbor; // TODO: Pour l'instant inutile.
- 
   private:
 };
 
@@ -64,16 +64,19 @@ class Triangle {
 
     // Normal
     void compute_normal();
-    glm::vec3 get_normal() {return _normal;};
+    int get_v1_id() {return _v1->id;};
+    int get_v2_id() {return _v2->id;};
+    int get_v3_id() {return _v3->id;};
+    // glm::vec3 get_normal() {return _normal;};
 
     void get_vert_neighbor(Vertex *v1, Vertex **v2, Vertex **v3);
 
-    // variable
+  public: // variable
+    glm::vec3 normal;
     int n_vert = 3;
   private:
     int _id;
     Vertex *_v1, *_v2, *_v3;
-    glm::vec3 _normal;
 };
 
 #endif // !ELEMENT_H

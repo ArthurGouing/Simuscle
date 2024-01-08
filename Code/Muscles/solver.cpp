@@ -32,11 +32,10 @@ using namespace glm;
 // }
 
 Solver::Solver(int n_points, Curve& curve, Solver_param* param):
+  impulse(false), gravity(true),
   n_points(n_points), n_ddl_tot(6*n_points), n_free_ddl(6*(n_points-2)), n_const_ddl(6*2),
-  _curve(curve), _parameters(param),
-  n_substep(param->n_substep), dt(1.f/24.f/float(param->n_substep)), 
-  _solution(n_points, Qpoint(vec3(0.f), vec3(0.f))),
-  impulse(false)
+  _solution(n_points, Qpoint(vec3(0.f), vec3(0.f))), _curve(curve),
+  dt(1.f/24.f/float(param->n_substep)), n_substep(param->n_substep), _parameters(param)
 {
   resize_solver(n_points);
   L.setZero();
@@ -87,19 +86,19 @@ void Solver::update_matrices()
     // Build matrices
     build_M_1();
     K = build_K();
-    std::cout<<"M_1: "<<std::endl;
-    std::cout<<MatrixXf(M_1)<<std::endl;
+    // std::cout<<"M_1: "<<std::endl;
+    // std::cout<<MatrixXf(M_1)<<std::endl;
     A = Id + dt*dt*M_1*K;
-    std::cout<<"M_1.K: "<<std::endl;
-    std::cout<<MatrixXf(M_1*K)<<std::endl;
-    std::cout<<"A: "<<std::endl;
-    std::cout<<MatrixXf(A)<<std::endl;
+    // std::cout<<"M_1.K: "<<std::endl;
+    // std::cout<<MatrixXf(M_1*K)<<std::endl;
+    // std::cout<<"A: "<<std::endl;
+    // std::cout<<MatrixXf(A)<<std::endl;
     if (_parameters->solver==direct)
       cholesky_A();
-    std::cout<<"LLt: "<<std::endl;
-    std::cout<<MatrixXf(L*L.transpose())<<std::endl;
-    std::cout<<"diff"<<std::endl;
-    std::cout<<MatrixXf(L*L.transpose()-A)<<std::endl;
+    // std::cout<<"LLt: "<<std::endl;
+    // std::cout<<MatrixXf(L*L.transpose())<<std::endl;
+    // std::cout<<"diff"<<std::endl;
+    // std::cout<<MatrixXf(L*L.transpose()-A)<<std::endl;
     exit(0);
   }
   else if (_parameters->methode==dynamic_visc_implicit || _parameters->methode==dynamic_visc_explicit)
@@ -267,9 +266,9 @@ SparseMatrix<float> Solver::build_K()
   // std::cout<<"K_lp:  "<<std::endl;
   // std::cout << MatrixXf(K_lp) << std::endl;
 
-  std::cout<<" "<<std::endl;
-  std::cout<<"K:  "<<std::endl;
-  std::cout << MatrixXf(K) << std::endl;
+  // std::cout<<" "<<std::endl;
+  // std::cout<<"K:  "<<std::endl;
+  // std::cout << MatrixXf(K) << std::endl;
 
   return K;
 }
@@ -323,7 +322,6 @@ SparseMatrix<float> Solver::build_Ke_glo(MaterialProperty* property)
   float Iy = property->get_Iy();
   float Iz = property->get_Iz();
   float int_pt = 1.f/sqrt(3.f);
-  float eps=pow(10,-5);
 
   // Build Btrac
   tripletList.push_back(T(0, 0, -1.f/L));
@@ -540,8 +538,8 @@ void Solver::cholesky_A()
       L.coeffRef(i, j) = (A.coeffRef(i, j) - sum_ij) / L.coeffRef(j, j);
     }
   }
-  std::cout<<"L: "<<std::endl;
-  std::cout<<MatrixXf(L)<<std::endl;
+  // std::cout<<"L: "<<std::endl;
+  // std::cout<<MatrixXf(L)<<std::endl;
 }
 
 void Solver::solveLU()

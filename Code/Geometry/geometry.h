@@ -26,6 +26,7 @@
 // #include <glm/gtc/type_ptr.hpp>
 
 
+// Faire une classe abstrait et 2 class fille pour les geometry bone, geometry muscle et geometry skin
 
 class Geometry {
   public:
@@ -37,19 +38,28 @@ class Geometry {
 
     void compute_normals();
 
-    void set_Buffers();
-    void send_VBO();
+    glm::vert_arr compute_value(int vert_id);
 
-    unsigned int VAO, VBO, EBO;
+    void set_transform(glm::mat4 new_transformation) {_transformation = new_transformation;};
+
+    // std::vector<glm::vert_arr> vert_values;
+    // std::vector<int>           face_indices;
+    // int n_values;
+    // int n_indices;
+    //
+  public:
+    std::string name;
+    // Verteices
+    std::vector<Vertex>   vertex_list;
     int n_verts;
+    // Faces
+    std::vector<Triangle> face_list;
     int n_faces;
 
-    std::vector<glm::vert_arr> vert_values;
-    std::vector<int>   face_indices;
+    int offset_id;
 
-    std::vector<Vertex>   vertex_list;
-    std::vector<Triangle> face_list;
   private:
+    glm::mat4 _transformation;
     // use vector can use L.data() gives you access to the int[] array buffer and you can L.resize() the vector later.
     // L.get() gives you a pointer to the int[] array.
     // std::vector<float> vert_norm; 

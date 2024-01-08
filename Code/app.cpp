@@ -22,7 +22,7 @@ void App::window_resize_event(int width, int height)
   float aspect = float(width) / float(height ? height : 1);
 
   // Update projection matrix;
-  _renderer->update_projection(aspect);
+  _r_manager->update_projection(aspect);
   // Info_Print(std::to_string(width)+"x"+std::to_string(height));
 }
 
@@ -52,7 +52,7 @@ void App::mouse_cursor_event(double xpos, double ypos)
     if (rot and !(mov or scale))
     {
     float angle = length(diff) * sensi_rot;
-    _renderer->update_rotation(diff, angle);
+    _r_manager->update_rotation(diff, angle);
     // if (rotationAxis[0]!=rotationAxis[0]) {
     //   Warn_Print("NAN in rotationAxis vector computation for camera view");
     //   rotationAxis = glm::vec3(0.0f,0.0f,1.0f);
@@ -60,12 +60,12 @@ void App::mouse_cursor_event(double xpos, double ypos)
     }
     if (mov)
     {
-      _renderer->update_camerapos(sensi_mov * diff);
+      _r_manager->update_camerapos(sensi_mov * diff);
     }
     if (scale)
     {
       float dist = (diff[1]<0) ? sensi_scale * length(diff) :  -sensi_scale * length(diff);
-      _renderer->update_cameradist(dist);
+      _r_manager->update_cameradist(dist);
     }
   }
 }
@@ -83,7 +83,7 @@ void App::mouse_scroll_event(double yoffset)
 {
   if (mouse_on_viewport) {
     float dist = sensi_scale * float(-yoffset);
-    _renderer->update_cameradist(dist);
+    _r_manager->update_cameradist(dist);
   }
 }
 
@@ -135,21 +135,18 @@ void App::processInput(GLFWwindow *window)
 }
 
 // Constructor
-App::App(Renderer* renderer, Skeleton* skeleton, MuscleSystem* muscles) :
-  _renderer(renderer), /*_simulator(),*/ _skel(skeleton), _musc(muscles),
+App::App(RenderManager* r_manager, Skeleton* skeleton, MuscleSystem* muscles) :
+  _r_manager(r_manager), _skel(skeleton), _musc(muscles),
   size_window(1.7f), show_demo_window(true),  // GLFW variable
-
   sensi_rot(0.3f), sensi_mov(0.0007f), sensi_scale(0.5f),                  // Camera control variable
+  firstMouse(true), 
   mouse_on_viewport(false), camera_is_moving(false), rot(false), mov(false), scale(false),
-  firstMouse(true), lastframe(0),
-  img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f)),
-  is_simulating(false), _swap_interval(3)
+  lastframe(0),
+  is_simulating(false), _swap_interval(3), 
+  img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f))
+
 {
   _timeline.set_last_frame(_skel->_nb_frames);
-  Title_Print("Launch Simuscle App (with skeleton)");
-  Info_Print("Commit  : ******");
-  Info_Print("Modif   : 23/09/23");
-  Info_Print("Version : 0.0.0");
 }
 
 void App::Init()
@@ -163,6 +160,7 @@ void App::Init()
   const char* glsl_version = "#version 420";
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true); // Active debug output TODO: suppr when debugged ?
   // Create window with graphics context
   Info_Print("Create GLFW window");
   window = glfwCreateWindow(size_window*1280, size_window*720, "Simuscle", nullptr, nullptr);
@@ -180,17 +178,20 @@ void App::Init()
   glfwSetScrollCallback(window, mouse_scroll_callback);
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
-  // Enable vsync
   // glfwSwapInterval(0); // number of screen update to wait before sending render to the screen
   glfwSwapInterval(_swap_interval);
   // Load extension's functions
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
-  /******** Geometry Init ********/
-
   /******** Render Init *******/
   Title_Print("Init Renderer");
-  _renderer->Init(int(pannel_size.x), int(pannel_size.y));
+  _r_manager->Init(int(pannel_size.x), int(pannel_size.y));
+
+  /******** Geometry Init ********/
+  // (la geom est existe déjà, il faut just la lier au renderer)
+  // _musc->link_geometry();
+  // ...
+  
 
   /******** Init ImGUI ********/
   Title_Print("Init ImGUI");
@@ -347,12 +348,12 @@ void App::Run()
     if (vp_size.x != pannel_size.x or vp_size.y != pannel_size.y)
     {
       Info_Print("Resize viewport to the new value: "+std::to_string(int(vp_size.x))+"x"+std::to_string(int(vp_size.y)));
-      _renderer->resize_fbo(vp_size.x, vp_size.y);
+      _r_manager->resize_fbo(vp_size.x, vp_size.y);
       window_resize_event(int(vp_size.x), int(vp_size.y));
       pannel_size.x = vp_size.x;
       pannel_size.y = vp_size.y;
     }
-    unsigned int FrameBufferID = _renderer->textureColorbuffer;
+    unsigned int FrameBufferID = _r_manager->textureColorbuffer;
     ImGui::Image((void *) FrameBufferID, ImVec2(pannel_size.x, pannel_size.y));
     ImGui::End();
 
@@ -361,7 +362,7 @@ void App::Run()
     ImGui::ShowDemoWindow();
     UI_control_pannel(io);
     _timeline.UI_pannel();
-    _renderer->UI_pannel();
+    _r_manager->UI_pannel();
     _skel->UI_pannel();
     _musc->UI_pannel();
 
@@ -369,16 +370,17 @@ void App::Run()
     _timeline.time_step();
 
 
+    /********* Armature animation ********/
+    _skel->compute(_timeline.get_frame());
     /********* Physics Solver ********/
-    if (lastframe!=_timeline.get_frame())
-    _skel->update_buffers(_timeline.get_frame());
-    if (is_simulating)
-      _musc->solve(_timeline.get_frame());
+    // if (lastframe!=_timeline.get_frame())
+    // if (is_simulating)
+    //   _musc->solve(_timeline.get_frame());
 
 
     /******** Rendering ********/
     ImGui::Render();
-    _renderer->Draw(_timeline.get_frame());
+    _r_manager->draw_all();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     /******** ??????? ********/
@@ -415,7 +417,7 @@ void App::UI_control_pannel(ImGuiIO& io)
   ImGui::Separator();
   std::string msg;
   for (int i = 0; i<4*4; i++) {
-    msg+= std::to_string(_renderer->_rotation[i%4][i/4]) + " ";
+    msg+= std::to_string(_r_manager->get_rotation()[i%4][i/4]) + " ";
     if (i%4==3) {
       msg+= "\n ";
     }
@@ -425,7 +427,7 @@ void App::UI_control_pannel(ImGuiIO& io)
   ImGui::Text(msg.c_str());
 
   if (ImGui::Button("Reset view"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-    _renderer->reset_view();
+    _r_manager->reset_view();
 
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
   ImGui::SeparatorText("Basic parameters");

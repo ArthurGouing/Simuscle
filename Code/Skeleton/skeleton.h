@@ -9,6 +9,7 @@
 #define SKELETON_H
 
 //******** LIBRARY ******** 
+ #include "Render/renderer.h"
 #include "Tools/tools.h"
 #include "timeline.h"
 #include "bonesinfo.h"
@@ -16,19 +17,16 @@
 class Skeleton
 {
   public:
-    Skeleton();
-    Skeleton(std::string project);
+    Skeleton(); // TODO: useless constructor
+    Skeleton(std::string project, Renderer* renderer);
     ~Skeleton();
 
+    Renderer* renderer;
     Bone Root_Bone; // Ou faire ccarrélement la liste des Bones, ca sera plus simple pour 
                     // parcourrir tous les bones une fois qu'ils existent
 
-    // J'ai envie de choisir le renderer dans la class skeleton, pour choisir la manière dont on souhaite qu'il s'affiche, indépendamment des muscles et skin
-    // Renderer renderer; 
-
-    void init_buffers();
-    void update_buffers(int frame);
-
+    void compute(int frame); // Il manque un trux après compute, mais je sais pas quoi mettre
+ 
     void draw_skeleton_stick();
     void draw_skeleton_mesh(bool wire_mode=false);
 

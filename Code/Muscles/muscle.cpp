@@ -8,20 +8,17 @@ using namespace glm;
 
 Muscle::Muscle(std::string name, std::string geometry_path, Bone* insertion_begin, Bone* insertion_end, 
     int n_points, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, Solver_param* solver_param) :
-  _name(name), _geometry_path(geometry_path), 
-  _curve(name+"_curve", n_points, P0, P1, P2, P3),
-  _insertion_begin(insertion_begin), _insertion_end(insertion_end),
-  _solver(n_points, _curve, solver_param)
-{
-}
+  _name(name), _mesh(), _curve(name+"_curve", n_points, P0, P1, P2, P3), _solver(n_points, _curve, solver_param),
+  _geometry_path(geometry_path), _insertion_begin(insertion_begin), _insertion_end(insertion_end)
+{}
 
 
 void Muscle::create_geometry(int* indice_offset)
 {
   _mesh.create_from_file(_geometry_path);
   Info_Print(_name + " | offset: "+std::to_string(*indice_offset));
-  for (int i = 0; i < _mesh.face_indices.size(); i++){
-    _mesh.face_indices[i] += *indice_offset;
+  for (int i = 0 ; i < _mesh.n_verts ; i++){
+    _mesh.vertex_list[i].pos += *indice_offset;
   }
   _id_offset = *indice_offset;
   *indice_offset += _mesh.n_verts;
@@ -29,8 +26,9 @@ void Muscle::create_geometry(int* indice_offset)
 
 void Muscle::update_values(std::vector<glm::vert_arr>* values, int frame)
 {
-  for (int i = 0; i < _mesh.n_verts; i++) {
-    values->at(i + _id_offset) = _mesh.vert_values[i];
+  for (int i = 0; i < _mesh.n_verts; i++)
+  {
+    values->at(i + _id_offset).pos = _mesh.vertex_list[i].pos;
   }
 }
 

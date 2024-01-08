@@ -51,7 +51,7 @@ class Deformations
 
     };
     void print(){
-      for (int i = 0; i < deform.size(); i++) {
+      for (size_t i = 0; i < deform.size(); i++) {
         std::cout << "p"<<i<<" pos: "<<deform[i].pos.x <<" "<<deform[i].pos.y <<" "<<deform[i].pos.z<<"  |  ";
         std::cout << "rot: "<<deform[i].rot.x<<" "<<deform[i].rot.y<<" "<<deform[i].rot.z<<" "<< std::endl;
         }

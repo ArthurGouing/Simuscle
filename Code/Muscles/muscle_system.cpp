@@ -17,7 +17,7 @@ MuscleSystem::MuscleSystem(std::string project, Skeleton *skel) :
 
   /******** Load Muscles meshes ********/
   int offset = 0;
-  for (int i = 0; i < muscles.size(); i++) {
+  for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].create_geometry(&offset);  // can be dones ine the read muscles parameters
   }
 
@@ -120,36 +120,37 @@ vec3 MuscleSystem::read_point(std::ifstream& info)
   return P;
 }
 
-void MuscleSystem::init_geom_buffers()
-{
-  // Create VBO
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
+// void MuscleSystem::init_geom_buffers()
+// {
+//   // Create VBO
+//   glGenVertexArrays(1, &VAO);
+//   glGenBuffers(1, &VBO);
+//   glGenBuffers(1, &EBO);
+// 
+//   // Init max values size (si on affiche moins de muscle, on garde la taille, mais on envoie que les x premiers points, on aura placé les muscles visibles dans les premiers slots de values)
+//   int values_size=0;
+//   for (int i = 0; i < muscles.size(); i++) {
+//     values_size += muscles[i]._mesh.n_verts;
+//   }
+//   values_geom.resize(values_size);
+//   n_values_geom = 6 * values_size;
+// 
+//   // Init indices_geom
+//   for (int i = 0; i < muscles.size(); i++) {
+//     indices_geom.insert(indices_geom.end(), muscles[i]._mesh.face_indices.begin(), muscles[i]._mesh.face_indices.end());
+//   }
+// 
+//   // Update values && Send geometry to GPU
+//   update_geom_buffers(0);
+// }
 
-  // Init max values size (si on affiche moins de muscle, on garde la taille, mais on envoie que les x premiers points, on aura placé les muscles visibles dans les premiers slots de values)
-  int values_size=0;
-  for (int i = 0; i < muscles.size(); i++) {
-    values_size += muscles[i]._mesh.n_verts;
-  }
-  values_geom.resize(values_size);
-  n_values_geom = 6 * values_size;
-
-  // Init indices_geom
-  for (int i = 0; i < muscles.size(); i++) {
-    indices_geom.insert(indices_geom.end(), muscles[i]._mesh.face_indices.begin(), muscles[i]._mesh.face_indices.end());
-  }
-
-  // Update values && Send geometry to GPU
-  update_geom_buffers(0);
-}
 
 void MuscleSystem::update_geom_buffers(int frame)
   // TODO: faire un create et un update car la taille ne changera jamais, peut être faire ce que je voulais à la base 
   // c'est à dire, quand les points de la geom sont modifier, les modifiers directement à l'adresse indiqué dans VBO
 {
   // Update geometry 
-  for (int i = 0; i < muscles.size(); i++) {
+  for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].update_values(&values_geom, frame);
   }
 
@@ -196,7 +197,7 @@ void MuscleSystem::init_crv_buffers()
 
   // Init max values size
   int values_size = 0;
-  for (int i = 0; i < muscles.size(); i++) {
+  for (size_t i = 0; i < muscles.size(); i++) {
     values_size += muscles[i]._curve.n_points;
     Info_Print(muscles[i]._curve.name);
   }
@@ -206,7 +207,7 @@ void MuscleSystem::init_crv_buffers()
 
   // Init indices
   int id_offset = 0;
-  for (int i = 0; i < muscles.size(); i++) {
+  for (size_t i = 0; i < muscles.size(); i++) {
     int n_point = muscles[i]._curve.n_points; // TODO correct curve so nb_el is the number of element and nb_pts the number of points
     for (int j = 0; j < n_point-1; j++) {
       indices_crv.push_back(id_offset + j);
@@ -262,7 +263,7 @@ void MuscleSystem::draw_curves()
 
 void MuscleSystem::solve(int frame)
 {
-  for (int i = 0; i < muscles.size(); i++) {
+  for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].solve(frame);
   }
 }
@@ -281,7 +282,7 @@ void MuscleSystem::UI_pannel()
   ImGui::Checkbox("Gravity", &solver_param.gravity);
   ImGui::SliderInt("Kmax", &solver_param.kmax, 1, 100);
   if (ImGui::InputInt("Substep", &solver_param.n_substep)) {
-    for (int i = 0; i < muscles.size(); i++) {
+    for (size_t i = 0; i < muscles.size(); i++) {
       muscles[i]._solver.update_matrices();
     }
   }
@@ -294,7 +295,7 @@ void MuscleSystem::UI_pannel()
       const bool is_selected = (solver_param.methode==i);
       if (ImGui::Selectable(simu_type_choice[i], is_selected)) {
         solver_param.methode = i;
-        for (int i = 0; i < muscles.size(); i++) {
+        for (size_t i = 0; i < muscles.size(); i++) {
           muscles[i]._solver.update_matrices();
         }
       }
@@ -313,7 +314,7 @@ void MuscleSystem::UI_pannel()
         std::cout << i << " " << solver_param.solver << std::endl;
         solver_param.solver = i;
         std::cout << i << " " << solver_param.solver << std::endl;
-        for (int i = 0; i < muscles.size(); i++) {
+        for (size_t i = 0; i < muscles.size(); i++) {
           muscles[i]._solver.update_matrices();
         }
       }
@@ -331,7 +332,7 @@ void MuscleSystem::UI_pannel()
   std::string s = muscles[item_current_idx]._name;
   if (ImGui::BeginCombo("Select muscle", s.c_str(), flags))
   {
-      for (int i = 0; i < muscles.size(); i++)
+      for (int i = 0; i < int(muscles.size()); i++) // WARN: pas sur que ce soit une bonne idée de cast in long signed int en int
       {
           const bool is_selected = (item_current_idx == i);
           s = muscles[i]._name;

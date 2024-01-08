@@ -6,16 +6,14 @@
 
 using namespace glm;
 
-Vertex::Vertex(int id, std::vector<vert_arr> *vert_values):
-  _id(id), _pos(&vert_values->at(id).pos), _normal(&vert_values->at(id).normal),
-  n_face_neighbor(0), n_vert_neighbor(0)
-{
-}
+Vertex::Vertex(int init_id, vec3 init_pos):
+  id(init_id), pos(init_pos), normal(0.f), n_face_neighbor(0), n_vert_neighbor(0)
+{}
+
 Vertex::Vertex(Vertex* vert):
-  _id(vert->_id), _pos(vert->_pos), _normal(vert->_normal),
+  id(vert->id), pos(vert->pos), normal(vert->normal),
   n_face_neighbor(vert->n_face_neighbor), n_vert_neighbor(vert->n_face_neighbor)
-{
-}
+{}
 
 void Vertex::compute_vert_normal(std::vector<Triangle> *faces)
 {
@@ -23,10 +21,10 @@ void Vertex::compute_vert_normal(std::vector<Triangle> *faces)
   {
     Vertex *v2, *v3;
     faces->at(_face_neighbor[i]).get_vert_neighbor(this, &v2, &v3);
-    float a = angle(normalize(v2->get_pos()-get_pos()), normalize(v3->get_pos()-get_pos()));
-    *_normal += a * faces->at(_face_neighbor[i]).get_normal();
+    float a = angle(normalize(v2->pos-pos), normalize(v3->pos-pos));
+    normal += a * faces->at(_face_neighbor[i]).normal;
   }
-  *_normal = normalize(*_normal);
+  normal = normalize(normal);
 }
 
 
@@ -67,7 +65,7 @@ Triangle::~Triangle()
 
 void Triangle::compute_normal()
 {
-  _normal =  normalize(cross(_v2->get_pos()-_v1->get_pos(), _v3->get_pos()-_v1->get_pos()));
+  normal =  normalize(cross(_v2->pos-_v1->pos, _v3->pos-_v1->pos));
 }
 
 void Triangle::get_vert_neighbor(Vertex *v1, Vertex **v2, Vertex **v3)

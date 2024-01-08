@@ -6,8 +6,8 @@
 Skeleton::Skeleton()
 {}
 
-Skeleton::Skeleton(std::string project):
-  reset_pose(false)
+Skeleton::Skeleton(std::string project, Renderer* init_renderer):
+  renderer(init_renderer), reset_pose(false)
 {
   Title_Print("Init Skeleton");
 
@@ -29,53 +29,16 @@ Skeleton::Skeleton(std::string project):
   Info_Print("Loading bones meshes");
   int indice_offset = 0;
   Root_Bone.create_geometry(bonesinfo, project, &indice_offset);
+  Root_Bone.link_geometry(renderer);
 
   Info_Print("Done");
 }
 
-void Skeleton::init_buffers()
-{
-  // Create VBO
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
-
-  // Init indices array
-  Root_Bone.set_indices(&indices);
-
-  // Init values array
-  int values_size=0;
-  Root_Bone.get_values_size(&values_size);
-  values.resize(values_size); // values need to be init before computing his values
-  n_values = 6 * values_size + 10000;
-  // n_values = 6 * values_size; // TODO: erreur, the n_values is not correct. I have no clues why that...
-
-  // Set VBO and sent it to the GPU
-  // Root_Bone.update_values(&values, 0, reset_pose); // useless already in update_buffers
-  update_buffers(0);
-}
-
-void Skeleton::update_buffers(int frame)
+void Skeleton::compute(int frame)
 {
   // Compute new values at the frame 
   Root_Bone.compute_transform(frame);
-  Root_Bone.update_values(&values, frame, reset_pose);
-
-  // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-  glBindVertexArray(VAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, values.size() * 6 * sizeof(float), &(values[0]), GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), indices.data(), GL_STATIC_DRAW);
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-  // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  renderer->update_VBO();
 }
 
 void Skeleton::draw_skeleton_stick()
@@ -136,6 +99,7 @@ void Skeleton::UI_pannel()
 
 Skeleton::~Skeleton()
 {
+  delete renderer;
 }
 
 #endif // !SKELETON_CPP
