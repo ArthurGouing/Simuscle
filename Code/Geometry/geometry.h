@@ -41,6 +41,7 @@ class Geometry {
     glm::vert_arr compute_value(int vert_id);
 
     void set_transform(glm::mat4 new_transformation) {_transformation = new_transformation;};
+    void set_id_offset(int offset) {offset_id = offset;};
 
     // std::vector<glm::vert_arr> vert_values;
     // std::vector<int>           face_indices;

@@ -96,9 +96,9 @@ void RenderManager::resize_fbo(int width, int height)
   _del_fbo = true;
 
   // TODO: Comprendre pk je dois reactiver les tectures !!! et comment faire quand j'ai plusieurs shaders ?
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, _renderers[0]->get_texture_id());
-  glUniform1i(glGetUniformLocation(_fragmentShader, "MatcapTexture"), 0); //TODO: _fragmentShader shouldn't exist
+  // glActiveTexture(GL_TEXTURE0);
+  // glBindTexture(GL_TEXTURE_2D, _renderers[0]->get_texture_id());
+  // glUniform1i(glGetUniformLocation(_fragmentShader, "MatcapTexture"), 0); //TODO: _fragmentShader doesn't exist
   // Say which texture had to go to shader
   // glActiveTexture(GL_TEXTURE0);
   // glBindTexture(GL_TEXTURE_2D, _textureid);

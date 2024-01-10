@@ -17,6 +17,7 @@ Geometry::Geometry(std::string file):
 
 void Geometry::create_from_file(std::string file)
 {
+  name = file;
   std::cout << "  " << file << std::endl;
   // Declaration des variable
   std::ifstream geom_file(file);

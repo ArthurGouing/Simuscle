@@ -143,7 +143,7 @@ App::App(RenderManager* r_manager, Skeleton* skeleton, MuscleSystem* muscles) :
   mouse_on_viewport(false), camera_is_moving(false), rot(false), mov(false), scale(false),
   lastframe(0),
   is_simulating(false), _swap_interval(3), 
-  img_size(1.0f), pannel_size(vec2(1191.0f, 819.0f))
+  img_size(1.0f), pannel_size(vec2(1291.0f, 819.0f))
 
 {
   _timeline.set_last_frame(_skel->_nb_frames);
@@ -252,45 +252,6 @@ void App::Run()
     ImGui::NewFrame();
 
     // Viewports
-    // bool b=true;
-    // bool *p_open;
-    // p_open = &b;
-    // static bool opt_fullscreen = true;
-    // static bool opt_padding = false;
-    // static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-
-    // // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-    // // because it would be confusing to have two docking targets within each others.
-    // ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    // const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    // ImGui::SetNextWindowPos(viewport->WorkPos);
-    // ImGui::SetNextWindowSize(viewport->WorkSize);
-    // ImGui::SetNextWindowViewport(viewport->ID);
-    // ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    // ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    // window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    // window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-    // // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-    // // and handle the pass-thru hole, so we ask Begin() to not render a background.
-    // if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-    //     window_flags |= ImGuiWindowFlags_NoBackground;
-
-    // // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-    // // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-    // // all active windows docked into it will lose their parent and become undocked.
-    // // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-    // // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-    // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    // ImGui::Begin("Viewport", p_open, window_flags);
-    // ImGui::PopStyleVar();
-    // ImGui::PopStyleVar(2);
-
-    // // Submit the DockSpace
-    // ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    // ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    // dockspace_flags = ImGuiDockNodeFlags_NoDockingInCentralNode | ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize;
-
     ImGuiIO& io = ImGui::GetIO();
     if (ImGui::BeginMainMenuBar())
     {
@@ -372,10 +333,10 @@ void App::Run()
 
     /********* Armature animation ********/
     _skel->compute(_timeline.get_frame());
+
     /********* Physics Solver ********/
-    // if (lastframe!=_timeline.get_frame())
-    // if (is_simulating)
-    //   _musc->solve(_timeline.get_frame());
+    if (is_simulating)
+      _musc->solve(_timeline.get_frame());
 
 
     /******** Rendering ********/

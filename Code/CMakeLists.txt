@@ -25,6 +25,7 @@ file(GLOB HEADERS glad.c */*.h)
 
 # Crée l'exécutable apartir des sources et des headers
 include_directories(${CMAKE_SOURCE_DIR})
+add_compile_options(-g -O0 -Wall)
 add_executable(simuscle ${SRCS} ${HEADERS})
 
 # Indique les librairie à utiliser

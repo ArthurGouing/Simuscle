@@ -177,16 +177,13 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
 
       std::string geometry_file = project_path+"Bones/"+info.list_info[i].name+".off";
       _mesh.create_from_file(geometry_file);
-      for (int i = 0; i < _mesh.n_verts; i++){
-        _mesh.vertex_list[i].id += *indice_offset;
-      }
-      _mesh.offset_id = *indice_offset;
+      _mesh.set_id_offset(*indice_offset);
+      // for (int i = 0; i < _mesh.n_verts; i++){
+      //   _mesh.vertex_list[i].id += *indice_offset;
+      // }
+      // _mesh.offset_id = *indice_offset;
       // Info_Print("id offset in mesh: "+std::to_string(_mesh.offset_id));
       *indice_offset += _mesh.n_verts;
-      Info_Print("id offset: "+std::to_string(*indice_offset));
-      Info_Print("info bone: "+info.list_info[0].name);
-      Info_Print(project_path);
-      // Info_Print("id offset in mesh: "+std::to_string(_mesh.offset_id));
       break;
     }
   }
@@ -263,6 +260,7 @@ void Bone::compute_transform(int frame, mat4 parent_transform)
   
   //
   transformation = parent_transform * localtransform;
+  _mesh.set_transform(transformation);
   // Recursive
   for (size_t ichild = 0; ichild < _childrens.size(); ichild++) {
     _childrens[ichild].compute_transform(frame, transformation);

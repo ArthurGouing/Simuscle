@@ -16,14 +16,11 @@ Muscle::Muscle(std::string name, std::string geometry_path, Bone* insertion_begi
 void Muscle::create_geometry(int* indice_offset)
 {
   _mesh.create_from_file(_geometry_path);
-  Info_Print(_name + " | offset: "+std::to_string(*indice_offset));
-  for (int i = 0 ; i < _mesh.n_verts ; i++){
-    _mesh.vertex_list[i].pos += *indice_offset;
-  }
-  _id_offset = *indice_offset;
+  _mesh.set_id_offset(*indice_offset);
   *indice_offset += _mesh.n_verts;
 }
 
+/*
 void Muscle::update_values(std::vector<glm::vert_arr>* values, int frame)
 {
   for (int i = 0; i < _mesh.n_verts; i++)
@@ -31,29 +28,36 @@ void Muscle::update_values(std::vector<glm::vert_arr>* values, int frame)
     values->at(i + _id_offset).pos = _mesh.vertex_list[i].pos;
   }
 }
+*/
 
 void Muscle::solve(int frame)
 {
   Qpoint q_0, q_np1;
   q_0.pos = vec3(_insertion_begin->transformation * vec4(_curve.curve_points[0], 1.f)) - _curve.curve_points[0];
-  float rx, ry, rz;
-  extractEulerAngleXYZ(_insertion_begin->transformation, rx, ry, rz);
-  // if (_name=="Biceps") {
-  //   ImGui::Begin("Test");
-  //   ImGui::SliderFloat("rx", &_rx, -6.28, 6.28);
-  //   ImGui::SliderFloat("rz", &_rz, -6.28, 6.28);
-  //   ImGui::SliderFloat("ry", &_ry, -6.28, 6.28);
-  //   ImGui::End();
-  // }
-  std::cout<<rx<<" "<<ry<<" "<<rz<<std::endl;
-  q_0.rot = vec3(rx, ry, rz);
+  // Tentative de rotation peu concluante: 
+  // float rx, ry, rz;
+  // extractEulerAngleXYZ(_insertion_begin->transformation, rx, ry, rz);
+  // // if (_name=="Biceps") {
+  // //   ImGui::Begin("Test");
+  // //   ImGui::SliderFloat("rx", &_rx, -6.28, 6.28);
+  // //   ImGui::SliderFloat("rz", &_rz, -6.28, 6.28);
+  // //   ImGui::SliderFloat("ry", &_ry, -6.28, 6.28);
+  // //   ImGui::End();
+  // // }
+  // std::cout<<rx<<" "<<ry<<" "<<rz<<std::endl;
+  // q_0.rot = vec3(rx, ry, rz);
   q_np1.pos = vec3(_insertion_end->transformation * vec4(_curve.curve_points[_curve.n_points-1], 1.f)) - _curve.curve_points[_curve.n_points-1];
-  extractEulerAngleXYZ(_insertion_end->transformation, rx, ry, rz);
-  q_np1.rot = vec3(rx, ry, rz);
+
+  // IDEM
+  // extractEulerAngleXYZ(_insertion_end->transformation, rx, ry, rz);
+  // q_np1.rot = vec3(rx, ry, rz);
   // Vec3_Draw(q_0.pos, q_0.rot);
   // Vec3_Draw(q_0.pos, vec3(1.f, 0.f, 0.f));
+  //
   _solver.solve_iteration(q_0, q_np1);
+  // _mesh.update_transform(_solver.get_solution());
 }
+
 void Muscle::UI_pannel()
 {
   char name[_name.size()];
