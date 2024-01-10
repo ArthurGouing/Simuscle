@@ -14,12 +14,12 @@ Renderer::Renderer(std::string name, std::string vert_source, std::string frag_s
 
 void Renderer::Init() // TODO: a virer, seul load shader suffit finalement
 {
-  Title_Print("Init "+_name);
-  Info_Print("Compite shaders: "+_vshader_path+" and "+_fshader_path);
+  Info_Print(_name+": Compite shaders: "+_vshader_path+" and "+_fshader_path);
   load_shader();
 
-  Info_Print("Create VBO");
+  Info_Print(_name+": Create VBO");
   init_VBO();
+  Info_Print("Done.\n");
 }
 
 void Renderer::load_shader()
@@ -197,9 +197,9 @@ void GeomRenderer::init_VBO()
       // std::cout << geom->face_list[i].get_v1_id() << std::endl;
       // std::cout << geom->offset_id << std::endl;
       // std::cout << geom->offset_id + geom->face_list[i].get_v1_id() << std::endl;
-      _indices.push_back(/*geom->offset_id*/ + geom->face_list[i].get_v1_id());
-      _indices.push_back(/*geom->offset_id*/ + geom->face_list[i].get_v2_id());
-      _indices.push_back(/*geom->offset_id*/ + geom->face_list[i].get_v3_id());
+      _indices.push_back(geom->offset_id + geom->face_list[i].get_v1_id());
+      _indices.push_back(geom->offset_id + geom->face_list[i].get_v2_id());
+      _indices.push_back(geom->offset_id + geom->face_list[i].get_v3_id());
     }
   }
 
@@ -220,16 +220,18 @@ void GeomRenderer::init_VBO()
   glEnableVertexAttribArray(1);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  Info_Print("Unbind EBO ???");
 
   GLenum err;
   err = glGetError();
   std::cout << "OpenGL Error: " << err << std::endl;
   Info_Print("\nOpenGL Error: ");
-  glCheckError();
 }
 
 void GeomRenderer::update_VBO()
 {
+  Info_Print("Update VBO");
   // update values and indices
   for(const auto& geom : _allgeom)
   {
@@ -241,15 +243,24 @@ void GeomRenderer::update_VBO()
 
   // Send new values to VBO
   glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
 
   glBufferSubData(GL_ARRAY_BUFFER, 0, _values.size() * 6 * sizeof(float), _values.data()); // cf la doc pour l'utiliser correctement
-  glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, _indices.size() * sizeof(int), _indices.data());
+  // glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, _indices.size() * sizeof(int), _indices.data());
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void GeomRenderer::draw(mat4 vp_mat_ptr, mat4 view_ptr)
 {
+  // Bind
+  glUseProgram(_shaderProgram);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, _textureid);
+  glBindVertexArray(_VAO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
+
   Info_Print("Drawing skeleton");
   Mat4_Print("vp mat: ", vp_mat_ptr);
 
@@ -262,8 +273,6 @@ void GeomRenderer::draw(mat4 vp_mat_ptr, mat4 view_ptr)
   glCheckError();
 
   // Set draw parameters
-  glUseProgram(_shaderProgram);
-  glBindVertexArray(_VAO);
   if (render_mode == wire) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   } else if (render_mode == mesh) {
@@ -273,10 +282,13 @@ void GeomRenderer::draw(mat4 vp_mat_ptr, mat4 view_ptr)
   }
   // n_values: 
   Info_Print(std::to_string(_n_values));
-  _n_values = 5000 * 6;
+  // _n_values = 5000 * 6;
 
   // Draw elements
+  glCheckError();
   glDrawElements(GL_TRIANGLES, _n_values, GL_UNSIGNED_INT, 0);
+
+  glBindVertexArray(0);
 }
 
 GeomRenderer::~GeomRenderer()

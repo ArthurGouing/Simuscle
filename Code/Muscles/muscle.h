@@ -29,7 +29,7 @@ class Muscle
 
     void create_geometry(int* indice_offset);
     // void update_values_crv(std::vector<glm::vert_arr>* values, int frame);
-    void update_values(std::vector<glm::vert_arr>* values, int frame);
+    // void update_values(std::vector<glm::vert_arr>* values, int frame);
 
     // UI functions
     void UI_pannel();

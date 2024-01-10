@@ -21,7 +21,7 @@ class Skeleton
     Skeleton(std::string project, Renderer* renderer);
     ~Skeleton();
 
-    Renderer* renderer;
+    Renderer* renderer; // Needed to link geometry and update VAO
     Bone Root_Bone; // Ou faire ccarrélement la liste des Bones, ca sera plus simple pour 
                     // parcourrir tous les bones une fois qu'ils existent
 

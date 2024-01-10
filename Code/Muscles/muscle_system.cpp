@@ -5,8 +5,8 @@
 using namespace glm;
 
 
-MuscleSystem::MuscleSystem(std::string project, Skeleton *skel) :
-  _skel(skel), line_width(4.f), point_width(8.f), gravity(true)
+MuscleSystem::MuscleSystem(std::string project, Renderer* renderer, Skeleton *skel) :
+  _renderer(renderer), _skel(skel), line_width(4.f), point_width(8.f), gravity(true)
 {
   Title_Print("Init Muscle System");
 
@@ -19,6 +19,12 @@ MuscleSystem::MuscleSystem(std::string project, Skeleton *skel) :
   int offset = 0;
   for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].create_geometry(&offset);  // can be dones ine the read muscles parameters
+    Info_Print("offset: "+std::to_string(offset));
+  }
+
+  /******** Link meshes to the renderer ********/
+  for (size_t i = 0; i < muscles.size(); i++) {
+    _renderer->add_object(&(muscles[i]._mesh));
   }
 
   /******** Other parameters ********/
@@ -120,72 +126,12 @@ vec3 MuscleSystem::read_point(std::ifstream& info)
   return P;
 }
 
-// void MuscleSystem::init_geom_buffers()
-// {
-//   // Create VBO
-//   glGenVertexArrays(1, &VAO);
-//   glGenBuffers(1, &VBO);
-//   glGenBuffers(1, &EBO);
-// 
-//   // Init max values size (si on affiche moins de muscle, on garde la taille, mais on envoie que les x premiers points, on aura placé les muscles visibles dans les premiers slots de values)
-//   int values_size=0;
-//   for (int i = 0; i < muscles.size(); i++) {
-//     values_size += muscles[i]._mesh.n_verts;
-//   }
-//   values_geom.resize(values_size);
-//   n_values_geom = 6 * values_size;
-// 
-//   // Init indices_geom
-//   for (int i = 0; i < muscles.size(); i++) {
-//     indices_geom.insert(indices_geom.end(), muscles[i]._mesh.face_indices.begin(), muscles[i]._mesh.face_indices.end());
-//   }
-// 
-//   // Update values && Send geometry to GPU
-//   update_geom_buffers(0);
-// }
 
-
-void MuscleSystem::update_geom_buffers(int frame)
+void MuscleSystem::update_geom_buffers()
   // TODO: faire un create et un update car la taille ne changera jamais, peut être faire ce que je voulais à la base 
   // c'est à dire, quand les points de la geom sont modifier, les modifiers directement à l'adresse indiqué dans VBO
 {
-  // Update geometry 
-  for (size_t i = 0; i < muscles.size(); i++) {
-    muscles[i].update_values(&values_geom, frame);
-  }
-
-  // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-  glBindVertexArray(VAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, values_geom.size() * 6 * sizeof(float), &(values_geom[0]), GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_geom.size() * sizeof(float), indices_geom.data(), GL_STATIC_DRAW);
-  
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-  // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void MuscleSystem::draw_muscles()
-{
-  // Draw the muscles
-  glBindVertexArray(VAO);  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-  // Set parameters
-  if (render_mode == "wire") {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  } else if (render_mode == "mesh") {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  } else {
-    Err_Print("The render_mode '" + render_mode + "' is not valid. Choose between ['mesh', 'wire', 'stick']", "muscle_system.cpp");
-  }
-
-  glDrawElements(GL_TRIANGLES, n_values_geom, GL_UNSIGNED_INT, 0);
+  _renderer->update_VBO();
 }
 
 void MuscleSystem::init_crv_buffers()
@@ -266,6 +212,7 @@ void MuscleSystem::solve(int frame)
   for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].solve(frame);
   }
+  _renderer->update_VBO();
 }
 
 void MuscleSystem::UI_pannel()

@@ -16,7 +16,6 @@ Skeleton::Skeleton(std::string project, Renderer* init_renderer):
   Info_Print("Reading BVH file : " + bvh_file);
   Root_Bone.create_from_file(bvh_file);
   _nb_frames = Root_Bone._nb_frames;
-
   // Root_Bone.print_bone();
 
   /******** Read Bones parameters ********/
