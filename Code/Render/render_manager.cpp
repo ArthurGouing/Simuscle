@@ -45,7 +45,7 @@ void RenderManager::draw_all()
 
     // Compute Camera transform
     _view = mat4(1.0f);
-    _view = glm::translate(_view, vec3(0.0f, 0.0f, -_cameradist));
+    _view = translate(_view, vec3(0.0f, 0.0f, -_cameradist));
     _view = _view * _rotation;
     _view = translate(_view, _camerapos);
     

@@ -128,8 +128,6 @@ vec3 MuscleSystem::read_point(std::ifstream& info)
 
 
 void MuscleSystem::update_geom_buffers()
-  // TODO: faire un create et un update car la taille ne changera jamais, peut être faire ce que je voulais à la base 
-  // c'est à dire, quand les points de la geom sont modifier, les modifiers directement à l'adresse indiqué dans VBO
 {
   _renderer->update_VBO();
 }

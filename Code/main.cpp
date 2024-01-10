@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
   // Renderer *line = new LineRenderer(&r_manager, "line_shader.vert", "line_shader.frag");
   // Renderer matcap_render(&skeleton, &muscles/*, &character*/);
   //
+  // r_manager.add_renderer(background_renderer);
   r_manager.add_renderer(musc_renderer);
   r_manager.add_renderer(skel_renderer);
   // ...
