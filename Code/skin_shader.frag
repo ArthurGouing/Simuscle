@@ -23,6 +23,7 @@ void main()
     {
       highp vec2 muv = vec2(0.5) + 0.5 * vec2(ourview * vec4(normalize(vNormal), 0));
       FragColor = texture(MatcapTexture, vec2(muv.x, 1.0-muv.y));
+      FragColor = pow(FragColor, vec4(0.6565));
       // FragColor = vec4(1.0, 1.0, 1.0, 1.0);
     }
 } 

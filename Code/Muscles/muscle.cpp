@@ -46,7 +46,7 @@ void Muscle::solve(int frame)
   // // }
   // std::cout<<rx<<" "<<ry<<" "<<rz<<std::endl;
   // q_0.rot = vec3(rx, ry, rz);
-  q_np1.pos = vec3(_insertion_end->transformation * vec4(_curve.curve_points[_curve.n_points-1], 1.f)) - _curve.curve_points[_curve.n_points-1];
+  q_np1.pos = vec3(_insertion_end->transformation * vec4(_curve.curve_points[_curve.n_verts-1], 1.f)) - _curve.curve_points[_curve.n_verts-1];
 
   // IDEM
   // extractEulerAngleXYZ(_insertion_end->transformation, rx, ry, rz);

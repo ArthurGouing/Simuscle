@@ -29,18 +29,17 @@ class MuscleSystem
 {
   public:
     // Init functions
-    MuscleSystem(std::string project, Renderer* renderer, Skeleton *skel);
+    MuscleSystem(std::string project, MatcapRenderer<Geometry>* renderer, Skeleton *skel);
 
     void read_muscles_parameters(std::string muscle_file, std::string project);
     glm::vec3 read_point(std::ifstream& info);
 
     // Muscle computation
     void solve(int frame);
-    void update_geom_buffers();
 
-    void init_crv_buffers();
-    void update_curve_buffers(int frame);
-    void draw_curves();
+    // void init_crv_buffers();
+    // void update_curve_buffers(int frame);
+    // void draw_curves();
 
 
     // Get/Set functions
@@ -53,7 +52,8 @@ class MuscleSystem
 
   private:
     // Other class link
-    Renderer *_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?
+    MatcapRenderer<Geometry> *_geom_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?
+    MatcapRenderer<Curve> *_crv_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?
     Skeleton *_skel;
 
     // Liste of muscles

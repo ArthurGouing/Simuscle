@@ -23,6 +23,7 @@
 
 namespace glm {
   struct vert_arr {
+    static const int size = 6;
     vec3 pos;
     vec3 normal;
   };

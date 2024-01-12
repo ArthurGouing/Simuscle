@@ -46,21 +46,23 @@ int main(int argc, char *argv[])
   // Create render pipeline
   RenderManager r_manager;
   // Create Renderer
-  Renderer *skel_renderer  = new GeomRenderer("skeleton shader", "skin_shader.vert", "skin_shader.frag", "white_matcap_2.jpg");
-  Renderer *musc_renderer  = new GeomRenderer("muscle shader", "skin_shader.vert", "skin_shader.frag", "red_matcap.png");
+  Renderer *skel_renderer  = new MatcapRenderer<Geometry>("skeleton shader", "skin_shader.vert", "skin_shader.frag", "white_matcap_2.jpg");
+  Renderer *musc_renderer  = new MatcapRenderer<Geometry>("muscle shader", "skin_shader.vert", "skin_shader.frag", "red_matcap.png");
   // Renderer *curve_renderer = new CurveRenderer(&r_manager, "crv_shader.vert", "crv_shader.frag");
-  // Renderer *bgrnd_renderer = new BGroundRenderer(&r_manager, "bgrnd_renderer.vert", "bgrnd_renderer.frag");
+  Renderer *bgrnd_renderer = new MarchingRenderer("Background shader", "background_raymarching.vert", "background_raymarching.frag");
+  Renderer *grnd_renderer = new GroundRenderer("Ground shader", "ground_shader.vert", "ground_shader.frag");
   // Renderer *line = new LineRenderer(&r_manager, "line_shader.vert", "line_shader.frag");
   // Renderer matcap_render(&skeleton, &muscles/*, &character*/);
   //
-  // r_manager.add_renderer(background_renderer);
+  r_manager.add_renderer(bgrnd_renderer);
+  r_manager.add_renderer(grnd_renderer);
   r_manager.add_renderer(musc_renderer);
   r_manager.add_renderer(skel_renderer);
   // ...
 
   // Create Objects
-  Skeleton skeleton(project, skel_renderer /*, Timeline or SimulationManager*/);
-  MuscleSystem muscles(project, musc_renderer, &skeleton);
+  Skeleton skeleton(project, dynamic_cast<MatcapRenderer<Geometry>*>(skel_renderer) /*, Timeline or SimulationManager*/);
+  MuscleSystem muscles(project, dynamic_cast<MatcapRenderer<Geometry>*>(musc_renderer), &skeleton);
   //Skin character(project, &skeleton, &muscles);
 
   // Init the application

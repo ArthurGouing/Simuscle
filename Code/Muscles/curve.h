@@ -71,25 +71,29 @@ class Curve
     Curve(std::string name, int n_point, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3);
     ~Curve();
 
-    // draw_curve();
+    // Compute Bezier curve
     glm::vec3 compute_curve_point(float t);
-    void update_values(std::vector<glm::vec3>* values, Deformations* deform);
+
+    // Get final position
+    void update_values(std::vector<glm::vec3>* values, Deformations* deform); // depreciated
+    glm::vert_arr compute_value(int id);
 
     // float get_L(int element_id);
     MaterialProperty* get_property(int element_id){return &elements[element_id];};;
-    void set_id_offset(int new_id_offset){id_offset=new_id_offset;};
+    void set_id_offset(int new_id_offset){offset_id=new_id_offset;};
 
   public:
     std::string name;
-    int n_points;
+    int n_verts;
     int n_elements; // 1 element or more
-    int id_offset;
+    int offset_id;
 
     std::vector<glm::vec3> curve_points;
+    Deformations _solution;
   private:
 
     std::vector<glm::vec3> control_points;
-    std::vector<MaterialProperty> elements; // Petit Template !!!
+    std::vector<MaterialProperty> elements; // Petit Template !???
 };
 
 #endif // !CURVE_H

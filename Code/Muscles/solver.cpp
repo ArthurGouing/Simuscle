@@ -220,10 +220,10 @@ SparseMatrix<float> Solver::build_K()
     }
   }
   // Build the Stifness matrix K (or rigidity matrix ??)
-  for (int id_pts = 0; id_pts < _curve.n_points-3; id_pts++) // Pas sur qu'on ait les bone preperty param
+  for (int id_pts = 0; id_pts < _curve.n_verts-3; id_pts++) // Pas sur qu'on ait les bone preperty param
   {
     // Build Ke
-    if (id_pts+1 >=_curve.n_points) {
+    if (id_pts+1 >=_curve.n_verts) {
       Ke_2.setZero();
     } else {
       property_e2 = _curve.get_property(id_pts+1); 
@@ -253,9 +253,9 @@ SparseMatrix<float> Solver::build_K()
   for (int ddl_i =  0; ddl_i < 6; ddl_i++) {
     for (int ddl_j = 0; ddl_j < 6; ddl_j++) {
       // Add element to K
-      tripletList.push_back(T((_curve.n_points-3)*6 + ddl_i, (_curve.n_points-3)*6 + ddl_j, Ke_1.coeffRef(ddl_i, ddl_j)));
+      tripletList.push_back(T((_curve.n_verts-3)*6 + ddl_i, (_curve.n_verts-3)*6 + ddl_j, Ke_1.coeffRef(ddl_i, ddl_j)));
       // Add element to K_lp
-      tripletList_K_lp.push_back(T((_curve.n_points-3)*6+ddl_i, 6 + ddl_j, Ke_1.coeffRef(ddl_i, ddl_j+6)));//le block en bas à gauche de Ke (6x6)
+      tripletList_K_lp.push_back(T((_curve.n_verts-3)*6+ddl_i, 6 + ddl_j, Ke_1.coeffRef(ddl_i, ddl_j+6)));//le block en bas à gauche de Ke (6x6)
     }
   }
 
@@ -382,7 +382,7 @@ void Solver::build_M_1() // TODO faire un update car M_1 est utiliser pour const
   std::vector<T> tripletList;
 
   // Build M_1
-  for (int id_pts = 1; id_pts < _curve.n_points-1; id_pts++) // Pas sur qu'on ait les bone preperty param
+  for (int id_pts = 1; id_pts < _curve.n_verts-1; id_pts++) // Pas sur qu'on ait les bone preperty param
   {
     // Info_Print("n_free_ddl: "+std::to_string(n_free_ddl));
     // Info_Print("id_pts: "+std::to_string(id_pts));

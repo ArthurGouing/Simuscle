@@ -8,22 +8,20 @@ using namespace glm;
 //******** ABSTRACT CLASS ******** 
 
 Renderer::Renderer(std::string name, std::string vert_source, std::string frag_source) :
-  _name(name), _vshader_path(vert_source), _fshader_path(frag_source), _textureid(-1)
+  _name(name), _vshader_path(vert_source), _fshader_path(frag_source)
 {
 }
 
-void Renderer::Init() // TODO: a virer, seul load shader suffit finalement
+void Renderer::update_projection(int width, int height, float fov, float zNear, float zFar)
 {
-  Info_Print(_name+": Compite shaders: "+_vshader_path+" and "+_fshader_path);
-  load_shader();
-
-  Info_Print(_name+": Create VBO");
-  init_VBO();
-  Info_Print("Done.\n");
+  float aspect = float(width) / float(height ? height : 1);
+  _viewport_size = vec2(width, height);
+  _projection = perspective(radians(fov), aspect, zNear, zFar);
 }
 
 void Renderer::load_shader()
 {
+  Info_Print("Compite shaders: "+_vshader_path+" and "+_fshader_path);
   // Format frag end vert
   std::ifstream vertexShaderFile(_vshader_path);
   std::ostringstream vertexBuffer;
@@ -95,8 +93,51 @@ void Renderer::load_shader()
   fragShaderFile.close();
 }
 
+void Renderer::UI_pannel()
+{
+  std::string title, text;
+  title = "Renderer "+ _name;
+  ImGui::Begin(title.c_str());
+  text = "Render vertex shader: " + _vshader_path;
+  ImGui::Text(text.c_str());
+  text = "Render frag shader:   " + _fshader_path;
+  ImGui::Text(text.c_str());
+  ImGui::End();
+}
 
-void Renderer::load_texture(std::string texture_path)
+
+Renderer::~Renderer()
+{
+  glDeleteProgram(_shaderProgram);
+}
+
+//******** GEOMETRY RENDER CLASS ******** 
+
+
+template <typename Object>
+MatcapRenderer<Object>::MatcapRenderer(std::string name, std::string vert_path, std::string frag_path, std::string texture_path, std::vector<Object*> geometries):
+  Renderer(name, vert_path, frag_path), _allgeom(geometries), render_mode(mesh)
+{
+  _texture_path = texture_path; // already init in Renderer constructor
+}
+
+template <typename Object>
+MatcapRenderer<Object>::MatcapRenderer(std::string name, std::string vert_path, std::string frag_path, std::string texture_path):
+  Renderer(name, vert_path, frag_path), _texture_path(texture_path), render_mode(mesh)
+{}
+
+template <typename Object>
+void MatcapRenderer<Object>::Init()
+{
+  Info_Print("Load Texture : "+_texture_path);
+  load_texture(_texture_path);
+
+  Info_Print("Create VBO");
+  init_VBO();
+}
+
+template <typename Object>
+void MatcapRenderer<Object>::load_texture(std::string texture_path)
 {
   Info_Print("Load texture");
   glGenTextures(1, &_textureid);
@@ -128,54 +169,13 @@ void Renderer::load_texture(std::string texture_path)
     std::cout << "Failed to load texture" << std::endl;
   }
 
-  GLenum err;
-  err = glGetError();
-  std::cout << "OpenGL Error: " << err << std::endl;
-  Info_Print("\nOpenGL Error: ");
-  glCheckError();
-
   /******** Cleaning ********/
   stbi_image_free(data);
 }
 
-Renderer::~Renderer()
+template<typename Object>
+void MatcapRenderer<Object>::init_VBO()
 {
-  glDeleteTextures(1, &_textureid);
-  glDeleteProgram(_shaderProgram);
-}
-
-
-
-
-//******** GEOMETRY RENDER CLASS ******** 
-
-
-GeomRenderer::GeomRenderer(std::string name, std::string vert_path, std::string frag_path, std::string texture_path, std::vector<Geometry*> geometries):
-  Renderer(name, vert_path, frag_path), _allgeom(geometries), render_mode(mesh)
-{
-  _texture_path = texture_path; // already init in Renderer constructor
-}
-
-GeomRenderer::GeomRenderer(std::string name, std::string vert_path, std::string frag_path, std::string texture_path):
-  Renderer(name, vert_path, frag_path), _texture_path(texture_path), render_mode(mesh)
-{}
-
-void GeomRenderer::Init()
-{
-  Title_Print("Init "+_name);
-  Info_Print("Compite shaders: "+_vshader_path+" and "+_fshader_path);
-  load_shader();
-
-  Info_Print("Load Texture : "+_texture_path);
-  load_texture(_texture_path);
-
-  Info_Print("Create VBO");
-  init_VBO();
-}
-
-void GeomRenderer::init_VBO()
-{
-   
   // Create VBO
   glGenVertexArrays(1, &_VAO);
   glGenBuffers(1, &_VBO);
@@ -183,27 +183,13 @@ void GeomRenderer::init_VBO()
 
   // Create values and indices from the geometries (or at least give the max size)
   Info_Print("Nb of geometry to render: "+std::to_string(_allgeom.size()));
-  for (const auto& geom : _allgeom)
+
+  for (const auto& obj : _allgeom)
   {
-    for (int i = 0; i < geom->n_verts; i++)
-    {
-      vert_arr arr;
-      arr.pos = geom->vertex_list[i].pos;
-      arr.normal = geom->vertex_list[i].normal;
-      _values.push_back(arr);
-    }
-    for (int i = 0; i < geom->n_faces; i++)
-    { 
-      // std::cout << geom->face_list[i].get_v1_id() << std::endl;
-      // std::cout << geom->offset_id << std::endl;
-      // std::cout << geom->offset_id + geom->face_list[i].get_v1_id() << std::endl;
-      _indices.push_back(geom->offset_id + geom->face_list[i].get_v1_id());
-      _indices.push_back(geom->offset_id + geom->face_list[i].get_v2_id());
-      _indices.push_back(geom->offset_id + geom->face_list[i].get_v3_id());
-    }
+    init_val_id(obj);
   }
 
-  _n_values = 6 * _values.size();
+  _n_values = ValueFormat::size * _values.size(); // TODO; a templater, depend du type et donc ValueFormat
 
   glBindVertexArray(_VAO);
 
@@ -222,14 +208,48 @@ void GeomRenderer::init_VBO()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   Info_Print("Unbind EBO ???");
-
-  GLenum err;
-  err = glGetError();
-  std::cout << "OpenGL Error: " << err << std::endl;
-  Info_Print("\nOpenGL Error: ");
 }
 
-void GeomRenderer::update_VBO()
+template <>
+void MatcapRenderer<Geometry>::init_val_id(Geometry* geom)
+{
+  // Values
+  for (int i = 0; i < geom->n_verts; i++)
+  {
+    // TODO: surement une spécialisation pour les curves
+    ValueFormat arr;
+    arr = geom->compute_value(i);
+    _values.push_back(arr);
+  }
+  // Indices
+  for (int i = 0; i < geom->n_faces; i++)
+  { 
+    // TODO: surement une spécialisation pour les curves
+    _indices.push_back(geom->offset_id + geom->face_list[i].get_v1_id());
+    _indices.push_back(geom->offset_id + geom->face_list[i].get_v2_id());
+    _indices.push_back(geom->offset_id + geom->face_list[i].get_v3_id());
+  }
+}
+template <>
+void MatcapRenderer<Curve>::init_val_id(Curve* crv)
+{
+  // Values
+  for (int i = 0; i < crv->n_verts; i++)
+  {
+    ValueFormat arr;
+    arr = crv->compute_value(i);
+    _values.push_back(arr);
+  }
+  // Indices
+  for (int vert_id = 0; vert_id < crv->n_verts-1; vert_id++)
+  {
+    _indices.push_back(crv->offset_id + vert_id);
+    _indices.push_back(crv->offset_id + vert_id+1);
+  }
+}
+
+template <typename Object>
+void MatcapRenderer<Object>::update_VBO()
 {
   Info_Print("Update VBO");
   // update values and indices
@@ -237,7 +257,8 @@ void GeomRenderer::update_VBO()
   {
     for (int i = 0; i < geom->n_verts; i++)
     {
-      _values[i + geom->offset_id] = geom->compute_value(i); // Peut etre metre le offset dans 
+      // TODO: surement des specialisations pour la curve
+      _values[i + geom->offset_id] = geom->compute_value(i);// For curve, what is the new point of the curve
     }
   }
 
@@ -252,7 +273,8 @@ void GeomRenderer::update_VBO()
   // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void GeomRenderer::draw(mat4 vp_mat_ptr, mat4 view_ptr)
+template<typename Object>
+void MatcapRenderer<Object>::draw(vec3 camera_pos, mat4 rotation, float camera_dist)
 {
   // Bind
   glUseProgram(_shaderProgram);
@@ -261,15 +283,21 @@ void GeomRenderer::draw(mat4 vp_mat_ptr, mat4 view_ptr)
   glBindVertexArray(_VAO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
 
-  Info_Print("Drawing skeleton");
-  Mat4_Print("vp mat: ", vp_mat_ptr);
+  // Compute Camera transform
+  mat4 view(1.0f);
+  view = translate(view, vec3(0.0f, 0.0f, -camera_dist));
+  view = view * rotation;
+  view = translate(view, camera_pos);
+  
+  mat4 vpmat = _projection * view;
+  vpmat = scale(vpmat, vec3(1.f, 1.f, 1.f));
 
   // Send variables to the GPU
   int modelLoc = glGetUniformLocation(_shaderProgram, "vp_mat");
-  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(vp_mat_ptr));
+  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(vpmat));
   int viewLoc = glGetUniformLocation(_shaderProgram, "view");
-  glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view_ptr));
-  Info_Print("Uniform mat4 error: ");
+  glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
   glCheckError();
 
   // Set draw parameters
@@ -286,16 +314,195 @@ void GeomRenderer::draw(mat4 vp_mat_ptr, mat4 view_ptr)
 
   // Draw elements
   glCheckError();
+  draw_elements();
+
+  glBindVertexArray(0);
+}
+template<>
+void MatcapRenderer<Geometry>::draw_elements()
+{
   glDrawElements(GL_TRIANGLES, _n_values, GL_UNSIGNED_INT, 0);
+}
+template<>
+void MatcapRenderer<Curve>::draw_elements()
+{
+  glDrawElements(GL_LINES, _n_values, GL_UNSIGNED_INT, 0);
+}
+template<>
+void MatcapRenderer<Line>::draw_elements()
+{
+  glDrawElements(GL_LINES, _n_values, GL_UNSIGNED_INT, 0);
+}
+
+template<typename Object>
+MatcapRenderer<Object>::~MatcapRenderer()
+{
+  // Renderer interface part
+  glDeleteProgram(_shaderProgram);
+
+  glDeleteTextures(1, &_textureid);
+  glDeleteVertexArrays(1, &_VAO);
+  glDeleteBuffers(1, &_VBO);
+  glDeleteBuffers(1, &_EBO);
+}
+
+
+//******** GROUND RENDERER ********
+
+
+GroundRenderer::GroundRenderer(std::string name, std::string vert_path, std::string frag_path):
+  Renderer(name, vert_path, frag_path), _ground_size(50.f)
+{
+}
+
+void GroundRenderer::Init()
+{
+  Info_Print(_name + " : Create VBO");
+  init_VBO();
+}
+
+void GroundRenderer::init_VBO()
+{
+  float vertices[] = {
+       _ground_size,  _ground_size, 0.0f,  // top right
+       _ground_size, -_ground_size, 0.0f,  // bottom right
+      -_ground_size, -_ground_size, 0.0f,  // bottom left
+      -_ground_size,  _ground_size, 0.0f   // top left 
+  };
+  unsigned int indices[] = {  // note that we start from 0!
+      0, 1, 3,  // first Triangle
+      1, 2, 3   // second Triangle
+  };
+  glGenVertexArrays(1, &_VAO);
+  glGenBuffers(1, &_VBO);
+  glGenBuffers(1, &_EBO);
+  // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+  glBindVertexArray(_VAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+
+  // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void GroundRenderer::draw(glm::vec3 camera_pos, glm::mat4 rotation, float camera_dist)
+{
+  // Bind
+  glUseProgram(_shaderProgram);
+  glBindVertexArray(_VAO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
+
+  // Compute Camera transform
+  mat4 view(1.0f);
+  view = translate(view, vec3(0.0f, 0.0f, -camera_dist));
+  view = view * rotation;
+  view = translate(view, camera_pos);
+  
+  mat4 vpmat = _projection * view;
+  vpmat = scale(vpmat, vec3(1.f, 1.f, 1.f));
+
+  // Send variables to the GPU
+  glUniform3fv(glGetUniformLocation(_shaderProgram, "camera_pos"), 1, &camera_pos[0]);
+  int modelLoc = glGetUniformLocation(_shaderProgram, "vp_mat");
+  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(vpmat));
+
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glCheckError();
+
+  // Draw elements
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
   glBindVertexArray(0);
 }
 
-GeomRenderer::~GeomRenderer()
+GroundRenderer::~GroundRenderer()
 {
-  glDeleteVertexArrays(1, &_VAO);
+  glDeleteProgram(_shaderProgram);
   glDeleteBuffers(1, &_VBO);
   glDeleteBuffers(1, &_EBO);
+  glDeleteVertexArrays(1, &_VAO);
+}
+
+
+
+//******** RAY MARCHING RENDER CLASS ******** 
+
+
+MarchingRenderer::MarchingRenderer(std::string name, std::string vert_path, std::string frag_path):
+  Renderer(name, vert_path, frag_path),
+  background_color(0.2, 0.5, 0.5),
+  fog_factor_sky(5.), fog_factor_ground(0.003),
+  white_color(0.25), black_color(0.4), grid_size(0.),
+  is_gamma_correction(true)
+{
+}
+
+void MarchingRenderer::Init()
+{
+  Info_Print("Create VBO");
+  init_VBO();
+}
+
+void MarchingRenderer::init_VBO()
+{
+  // Create VBO
+  glGenVertexArrays(1, &_VAO);
+  glGenBuffers(1, &_VBO);
+
+  glBindVertexArray(_VAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+  const static GLfloat vertices[] = {
+	-1.0f,  1.0f,  1.0f,  1.0f,  1.0f, -1.0f,
+	1.0f,  -1.0f, -1.0f, -1.0f, -1.0f,  1.0f};
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+
+  // float resolution[2] = {SCREEN_WIDTH, SCREEN_HEIGHT};
+  // glUniform2fv(glGetUniformLocation(shader, "iResolution"), 1, &resolution[0]);
+
+  // Unbind
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void MarchingRenderer::draw(glm::vec3 camera_pos, glm::mat4 rotation, float camera_dist)
+{
+  glBindVertexArray(_VAO); 
+  glUseProgram(_shaderProgram);
+  glDepthMask(GL_FALSE);
+
+  // Send parameters to GPU
+  float resolution[2] = {_viewport_size.x, _viewport_size.y}; //TODO:faire directement un ptr du _viewport_size
+  Info_Print("resolution: "+std::to_string(_viewport_size.x)+", "+std::to_string(_viewport_size.y));
+  rotation = transpose(rotation);
+  glUniform2fv(glGetUniformLocation(_shaderProgram, "i_resolution"), 1, &_viewport_size[0]);
+  glUniform3fv(glGetUniformLocation(_shaderProgram, "camera_pos"), 1, &camera_pos[0]);
+  glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
+  glUniform1fv(glGetUniformLocation(_shaderProgram, "camera_dist"), 1, &camera_dist);
+
+  glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glBindVertexArray(0);
+  glDepthMask(GL_TRUE);
+}
+
+
+MarchingRenderer::~MarchingRenderer()
+{
+  // Renderer interface part
+  glDeleteProgram(_shaderProgram);
+
+  glDeleteVertexArrays(1, &_VAO);
+  glDeleteBuffers(1, &_VBO);
 }
 
 #endif // !RENDER_CPP

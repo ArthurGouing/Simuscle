@@ -18,10 +18,10 @@ class Skeleton
 {
   public:
     Skeleton(); // TODO: useless constructor
-    Skeleton(std::string project, Renderer* renderer);
+    Skeleton(std::string project, MatcapRenderer<Geometry>* renderer);
     ~Skeleton();
 
-    Renderer* renderer; // Needed to link geometry and update VAO
+    MatcapRenderer<Geometry>* renderer; // Needed to link geometry and update VAO
     Bone Root_Bone; // Ou faire ccarrélement la liste des Bones, ca sera plus simple pour 
                     // parcourrir tous les bones une fois qu'ils existent
 
