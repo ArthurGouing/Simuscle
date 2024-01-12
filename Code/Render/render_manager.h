@@ -46,7 +46,7 @@ class RenderManager
     void update_cameradist(float dist);
     void update_rotation(glm::vec2 mouse_offset, float rotationAngle); 
     void update_camerapos(glm::vec2 mouse_offset);
-    void update_projection(float aspect);
+    void update_projection(int width, int height);
 
     // Get function
     glm::mat4 get_rotation() {return _rotation;};
@@ -72,6 +72,7 @@ class RenderManager
     glm::mat4 _view; 
   
     // Camera view variable
+    glm::vec2 _viewport_size;
     float     _zNear, _zFar, _fov;
     glm::mat4 _projection;
     glm::vec3 _camerapos;

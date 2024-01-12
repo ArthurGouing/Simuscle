@@ -9,12 +9,14 @@ RenderManager::RenderManager():
   _clear_color(0.2f, 0.3f, 0.3f, 1.0f),
   _zNear(0.0001f), _zFar(1500.0), _fov(45.0), _projection(mat4(1.f)),
   _camerapos(vec3(0.0f, 0.0f, -1.0f)), _cameradist(3.0f),
-  _r0(mat4(-0.71f, -0.03f,  -0.65f, 0.0f,
+  /*_r0(mat4(-0.71f, -0.03f,  -0.65f, 0.0f,
             0.64f, -0.025f, -0.75f, 0.0f,
             0.02f, -0.99f,   0.04f, 0.0f,
-            0.0f,   0.0f ,   0.0f, 1.0f)),
+            0.0f,   0.0f ,   0.0f, 1.0f)),*/
+  _r0(1.),
   _del_fbo(false)
 {
+  _r0 = rotate(_r0, radians(90.f), vec3(1.f, 0.f, 0.f));
   _rotation = _r0;
 }
 
@@ -27,6 +29,7 @@ void RenderManager::Init(int width, int height)
   Info_Print("Init all renderer");
   for(const auto& renderer : _renderers)
   {
+    renderer->load_shader();
     renderer->Init();
   }
 
@@ -46,7 +49,7 @@ void RenderManager::draw_all()
     // Compute Camera transform
     _view = mat4(1.0f);
     _view = translate(_view, vec3(0.0f, 0.0f, -_cameradist));
-    _view = _view * _rotation;
+    _view = _rotation * _view;
     _view = translate(_view, _camerapos);
     
     _vpmat = _projection * _view;
@@ -54,7 +57,7 @@ void RenderManager::draw_all()
     // Draw all the renderer
     for (const auto& renderer : _renderers)
     {
-      renderer->draw(_vpmat, _view);
+      renderer->draw(_camerapos, _rotation, _cameradist);
     }
 
     // UnBind
@@ -95,6 +98,11 @@ void RenderManager::resize_fbo(int width, int height)
 
   _del_fbo = true;
 
+  for(const auto renderer : _renderers)
+  {
+    renderer->update_projection(width, height, _fov, _zNear, _zFar);
+  }
+
   // TODO: Comprendre pk je dois reactiver les tectures !!! et comment faire quand j'ai plusieurs shaders ?
   // glActiveTexture(GL_TEXTURE0);
   // glBindTexture(GL_TEXTURE_2D, _renderers[0]->get_texture_id());
@@ -126,8 +134,10 @@ void RenderManager::update_cameradist(float dist)
   // TODO : CHoisir le signe en fonction du rapprochement avec le centre de l'écran(comme Blender)
 }
 
-void RenderManager::update_projection(float aspect)
+void RenderManager::update_projection(int width, int height)
 {
+  float aspect = float(width) / float(height ? height : 1);
+  _viewport_size = vec2(width, height);
   _projection = perspective(radians(_fov), aspect, _zNear, _zFar);
 }
 

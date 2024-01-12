@@ -5,8 +5,8 @@
 using namespace glm;
 
 
-MuscleSystem::MuscleSystem(std::string project, Renderer* renderer, Skeleton *skel) :
-  _renderer(renderer), _skel(skel), line_width(4.f), point_width(8.f), gravity(true)
+MuscleSystem::MuscleSystem(std::string project, MatcapRenderer<Geometry>* renderer, Skeleton *skel) :
+  _geom_renderer(renderer), _crv_renderer(dynamic_cast<MatcapRenderer<Curve>*> (renderer)), _skel(skel), line_width(4.f), point_width(8.f), gravity(true)
 {
   Title_Print("Init Muscle System");
 
@@ -24,7 +24,7 @@ MuscleSystem::MuscleSystem(std::string project, Renderer* renderer, Skeleton *sk
 
   /******** Link meshes to the renderer ********/
   for (size_t i = 0; i < muscles.size(); i++) {
-    _renderer->add_object(&(muscles[i]._mesh));
+    _geom_renderer->add_object(&(muscles[i]._mesh));
   }
 
   /******** Other parameters ********/
@@ -126,91 +126,86 @@ vec3 MuscleSystem::read_point(std::ifstream& info)
   return P;
 }
 
-
-void MuscleSystem::update_geom_buffers()
-{
-  _renderer->update_VBO();
-}
-
-void MuscleSystem::init_crv_buffers()
-{
-  // Create buffers
-  glGenVertexArrays(1, &crv_VAO);
-  glGenBuffers(1, &crv_VBO);
-  glGenBuffers(1, &crv_EBO);
-
-  // Init max values size
-  int values_size = 0;
-  for (size_t i = 0; i < muscles.size(); i++) {
-    values_size += muscles[i]._curve.n_points;
-    Info_Print(muscles[i]._curve.name);
-  }
-  values_crv.resize(values_size);
-
-  n_values_crv = 3 * values_size;
-
-  // Init indices
-  int id_offset = 0;
-  for (size_t i = 0; i < muscles.size(); i++) {
-    int n_point = muscles[i]._curve.n_points; // TODO correct curve so nb_el is the number of element and nb_pts the number of points
-    for (int j = 0; j < n_point-1; j++) {
-      indices_crv.push_back(id_offset + j);
-      indices_crv.push_back(id_offset + j+1);
-    }
-    muscles[i]._curve.set_id_offset(id_offset);
-    // muscles[i]._curve.id_offset = id_offset;
-    id_offset += n_point;
-  }
-
-  update_curve_buffers(0);
-  Info_Print("draw curve");
-  draw_curves();
-  Info_Print("draw curve done");
-}
-
-void MuscleSystem::update_curve_buffers(int frame)
-{
-  for (int i = 0; i < 1 /*muscles.size()*/; i++) {
-    Deformations* deformation;
-    deformation = muscles[i]._solver.get_solution();
-    // if (muscles[i]._name=="Biceps")
-    // deformation->print();
-    muscles[i]._curve.update_values(&values_crv, deformation);
-  }
-}
-
-void MuscleSystem::draw_curves()
-{
-  // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-  glBindVertexArray(crv_VAO);
-
-
-  glBindBuffer(GL_ARRAY_BUFFER, crv_VBO);
-  glBufferData(GL_ARRAY_BUFFER, values_crv.size() * 3 * sizeof(float), &(values_crv[0]), GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, crv_EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_crv.size() * sizeof(float), indices_crv.data(), GL_STATIC_DRAW);
-  
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-  glEnableVertexAttribArray(0);
-  // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  glBindVertexArray(crv_VAO);
-  glDisable(GL_DEPTH_TEST);
-  glLineWidth(line_width);
-  glDrawElements(GL_LINES, n_values_crv, GL_UNSIGNED_INT, 0);
-  glPointSize(point_width);
-  glDrawElements(GL_POINTS, n_values_crv, GL_UNSIGNED_INT, 0);
-  glEnable(GL_DEPTH_TEST);
-}
+// void MuscleSystem::init_crv_buffers()
+// {
+//   // Create buffers
+//   glGenVertexArrays(1, &crv_VAO);
+//   glGenBuffers(1, &crv_VBO);
+//   glGenBuffers(1, &crv_EBO);
+// 
+//   // Init max values size
+//   int values_size = 0;
+//   for (size_t i = 0; i < muscles.size(); i++) {
+//     values_size += muscles[i]._curve.n_points;
+//     Info_Print(muscles[i]._curve.name);
+//   }
+//   values_crv.resize(values_size);
+// 
+//   n_values_crv = 3 * values_size;
+// 
+//   // Init indices
+//   int id_offset = 0;
+//   for (size_t i = 0; i < muscles.size(); i++) {
+//     int n_point = muscles[i]._curve.n_points; // TODO correct curve so nb_el is the number of element and nb_pts the number of points
+//     for (int j = 0; j < n_point-1; j++) {
+//       indices_crv.push_back(id_offset + j);
+//       indices_crv.push_back(id_offset + j+1);
+//     }
+//     muscles[i]._curve.set_id_offset(id_offset);
+//     // muscles[i]._curve.id_offset = id_offset;
+//     id_offset += n_point;
+//   }
+// 
+//   update_curve_buffers(0);
+//   Info_Print("draw curve");
+//   draw_curves();
+//   Info_Print("draw curve done");
+// }
+// 
+// void MuscleSystem::update_curve_buffers(int frame)
+// {
+//   for (int i = 0; i < 1 /*muscles.size()*/; i++) {
+//     Deformations* deformation;
+//     deformation = muscles[i]._solver.get_solution();
+//     // if (muscles[i]._name=="Biceps")
+//     // deformation->print();
+//     muscles[i]._curve.update_values(&values_crv, deformation);
+//   }
+// }
+// 
+// void MuscleSystem::draw_curves()
+// {
+//   // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+//   glBindVertexArray(crv_VAO);
+// 
+// 
+//   glBindBuffer(GL_ARRAY_BUFFER, crv_VBO);
+//   glBufferData(GL_ARRAY_BUFFER, values_crv.size() * 3 * sizeof(float), &(values_crv[0]), GL_STATIC_DRAW);
+// 
+//   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, crv_EBO);
+//   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_crv.size() * sizeof(float), indices_crv.data(), GL_STATIC_DRAW);
+//   
+//   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+//   glEnableVertexAttribArray(0);
+//   // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+//   glBindBuffer(GL_ARRAY_BUFFER, 0);
+// 
+//   glBindVertexArray(crv_VAO);
+//   glDisable(GL_DEPTH_TEST);
+//   glLineWidth(line_width);
+//   glDrawElements(GL_LINES, n_values_crv, GL_UNSIGNED_INT, 0);
+//   glPointSize(point_width);
+//   glDrawElements(GL_POINTS, n_values_crv, GL_UNSIGNED_INT, 0);
+//   glEnable(GL_DEPTH_TEST);
+// }
 
 void MuscleSystem::solve(int frame)
 {
   for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].solve(frame);
   }
-  _renderer->update_VBO();
+  _geom_renderer->update_VBO();
+  _crv_renderer->update_VBO();
 }
 
 void MuscleSystem::UI_pannel()

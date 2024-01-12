@@ -48,7 +48,7 @@ class Bone // = The joint class in SIA Project
 
     void create_from_file(std::string file_name);
     void create_geometry(BonesInfo info, std::string project_path, int* indice_offset);
-    void link_geometry(Renderer* renderer); // TODO: à initégrer dans le create geom
+    void link_geometry(MatcapRenderer<Geometry>* renderer); // TODO: à initégrer dans le create geom
     void get_values_size(int* values_size);
     // void get_indices_size(int* indices_size);
     void set_indices(std::vector<int>* indices);

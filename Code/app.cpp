@@ -18,11 +18,9 @@ static void window_size_callback(GLFWwindow* window, int width, int height)
 void App::window_resize_event(int width, int height)
 {
   glViewport(0, 0, width, height);
-  // Calculate aspect ratio
-  float aspect = float(width) / float(height ? height : 1);
 
   // Update projection matrix;
-  _r_manager->update_projection(aspect);
+  // _r_manager->update_projection(int width, int height);
   // Info_Print(std::to_string(width)+"x"+std::to_string(height));
 }
 
@@ -226,7 +224,7 @@ void App::Init()
   ImGui_ImplOpenGL3_Init(glsl_version);
 
   // To get the 1st render window:
-  window_resize_event(1280, 720);
+  window_resize_event(pannel_size.x, pannel_size.y);
   Info_Print("Initialisation Done");
 }
 
@@ -335,8 +333,8 @@ void App::Run()
     _skel->compute(_timeline.get_frame());
 
     /********* Physics Solver ********/
-    if (is_simulating)
-      _musc->solve(_timeline.get_frame());
+    // if (is_simulating)
+    //   _musc->solve(_timeline.get_frame());
 
 
     /******** Rendering ********/

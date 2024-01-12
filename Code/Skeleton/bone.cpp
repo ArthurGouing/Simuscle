@@ -193,7 +193,7 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
   }
 }
 
-void Bone::link_geometry(Renderer* renderer)
+void Bone::link_geometry(MatcapRenderer<Geometry>* renderer)
 {
   Info_Print("link bone geometry of "+_name);
   renderer->add_object(&_mesh);

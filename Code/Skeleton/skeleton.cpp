@@ -6,7 +6,7 @@
 Skeleton::Skeleton()
 {}
 
-Skeleton::Skeleton(std::string project, Renderer* init_renderer):
+Skeleton::Skeleton(std::string project, MatcapRenderer<Geometry>* init_renderer):
   renderer(init_renderer), reset_pose(false)
 {
   Title_Print("Init Skeleton");
