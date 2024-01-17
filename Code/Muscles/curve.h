@@ -21,6 +21,10 @@
 struct Qpoint {  // Peut changer, dépend de commment on utilise pos et rot pour déformer le muscle
   Qpoint(){};
   Qpoint(glm::vec3 init_pos, glm::vec3 init_rot): pos(init_pos), rot(init_rot) {};
+  Qpoint operator=(Qpoint q) {pos =q.pos; rot=q.rot; return *this;};
+  Qpoint operator+(Qpoint q) {return Qpoint(pos+q.pos, rot+q.rot);};
+  Qpoint operator/(float scalar) {return Qpoint(pos/scalar, rot/scalar);};
+  Qpoint operator*(float scalar) {return Qpoint(scalar*pos, scalar*rot);};
   glm::vec3 pos;
   glm::vec3 rot;
 };
@@ -29,10 +33,34 @@ class Deformations
 {
   public:
     Deformations(){};
-    Deformations(int size, Qpoint v0):deform(size, v0){};
+    Deformations(int init_size, Qpoint v0):deform(init_size, v0), size(init_size){};
 
     void resize(int s){deform.resize(s);};
     Qpoint at(int i){return deform.at(i);};
+    Qpoint at(float t) {
+      // find the corresponding i and i+1 which arround t
+      if (t==1.f)
+        return at(size-1);
+      int i;
+      float a;
+      i = floor((size-1) * t);
+      a = (size-1)*t-i;
+      Qpoint Q_mean;
+      Q_mean = (at(i+1)*a + at(i)*(1-a));
+      return Q_mean;
+    };
+    glm::vec3 apply_rotation(glm::vec3 point, glm::vec3 rotation_center, float t)
+    {
+      glm::vec3 rot = at(t).rot;
+      glm::mat4 transform(1.0f);
+      transform = translate(transform, rotation_center);
+      transform = rotate(transform, rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
+      transform = rotate(transform, rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
+      transform = rotate(transform, rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+      transform = translate(transform, -rotation_center);
+      glm::vec3 rotated_point = glm::vec3(transform * glm::vec4(point, 1.f));
+      return rotated_point;
+    };
     void update_deform(Eigen::SparseVector<float> x, Eigen::SparseVector<float> x_p){
       Qpoint p0;
       p0.pos.x = x_p.coeffRef(0); p0.pos.y = x_p.coeffRef(1); p0.pos.z = x_p.coeffRef(2);
@@ -59,8 +87,14 @@ class Deformations
 
   private:
     std::vector<Qpoint> deform;
+    int size;
 };
 
+struct Ray {
+  glm::vec3 origin;
+  glm::vec3 direction;
+  glm::vec3 cast(float t) { return origin + t*direction;};
+};
 // typedef std::vector<Qpoint> Deformations;
 
 class Curve
@@ -73,6 +107,9 @@ class Curve
 
     // Compute Bezier curve
     glm::vec3 compute_curve_point(float t);
+    glm::vec3 tangent(float t);
+    glm::vec3 derive_second(float t);
+    Ray get_ray(float t, float theta); // return the ray orientated along er(z, theta)
 
     // Get final position
     void update_values(std::vector<glm::vec3>* values, Deformations* deform); // depreciated
@@ -82,6 +119,8 @@ class Curve
     MaterialProperty* get_property(int element_id){return &elements[element_id];};;
     void set_id_offset(int new_id_offset){offset_id=new_id_offset;};
 
+    void update_solution(Deformations* new_solution) {_solution = new_solution;};
+
   public:
     std::string name;
     int n_verts;
@@ -89,8 +128,9 @@ class Curve
     int offset_id;
 
     std::vector<glm::vec3> curve_points;
-    Deformations _solution;
+    Deformations* _solution;
   private:
+    glm::vec3 seem_dir;
 
     std::vector<glm::vec3> control_points;
     std::vector<MaterialProperty> elements; // Petit Template !???

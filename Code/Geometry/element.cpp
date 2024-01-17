@@ -7,7 +7,7 @@
 using namespace glm;
 
 Vertex::Vertex(int init_id, vec3 init_pos):
-  id(init_id), pos(init_pos), normal(0.f), n_face_neighbor(0), n_vert_neighbor(0)
+  id(init_id), pos(init_pos), normal(0.f), t(-1.f), n_face_neighbor(0), n_vert_neighbor(0)
 {}
 
 Vertex::Vertex(Vertex* vert):
@@ -57,6 +57,7 @@ Triangle::Triangle(int id, Vertex *v1, Vertex *v2, Vertex *v3):
   _id(id), _v1(v1), _v2(v2), _v3(v3)
 {
   compute_normal();
+  distance = dot(v1->pos, normal);
 }
 Triangle::~Triangle()
 {

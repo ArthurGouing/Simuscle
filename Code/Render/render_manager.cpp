@@ -26,9 +26,9 @@ void RenderManager::Init(int width, int height)
   Info_Print("Create Framebuffer");
   resize_fbo(width, height);
 
-  Info_Print("Init all renderer");
   for(const auto& renderer : _renderers)
   {
+    Info_Print("\033[4;36mInit " + renderer->name + ": \033[0m");
     renderer->load_shader();
     renderer->Init();
   }

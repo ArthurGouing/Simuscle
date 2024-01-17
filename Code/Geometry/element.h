@@ -29,9 +29,14 @@ namespace glm {
   };
 };
 
+struct color_arr {
+  float x, y, z;
+  float r, g, b;
+};
+
 class Triangle;
 
-class Vertex {
+class Vertex { // Plutot un struct qu'une class
   public:
     //Constructer
     Vertex(int id, glm::vec3 init_pos);
@@ -41,10 +46,13 @@ class Vertex {
     // Compute normal
     void compute_vert_normal(std::vector<Triangle> *faces);
 
+    void set_t(float new_t) {t = new_t;};
+
   public: // Variable
     int id;
     glm::vec3 pos;
     glm::vec3 normal;
+    float t; // le parametre de la courbe, la plus proche de la curve
 
     void add_face_neighbor(int id_face);
     void add_vert_neighbor(int id_vert);
@@ -68,12 +76,17 @@ class Triangle {
     int get_v1_id() {return _v1->id;};
     int get_v2_id() {return _v2->id;};
     int get_v3_id() {return _v3->id;};
+
+    glm::vec3 get_v1_pos() {return _v1->pos;};
+    glm::vec3 get_v2_pos() {return _v2->pos;};
+    glm::vec3 get_v3_pos() {return _v3->pos;};
     // glm::vec3 get_normal() {return _normal;};
 
     void get_vert_neighbor(Vertex *v1, Vertex **v2, Vertex **v3);
 
   public: // variable
     glm::vec3 normal;
+    float distance; // needed to define a affine surface in 3D
     int n_vert = 3;
   private:
     int _id;

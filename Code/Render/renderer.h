@@ -19,6 +19,7 @@
 #include <string>
 
 // Files
+#include "Geometry/element.h"
 #include "Geometry/geometry.h"
 #include "Muscles/curve.h" // curve --> element ??
 #include "imgui.h"
@@ -50,9 +51,10 @@ class Renderer // Interface class
     virtual ~Renderer() = 0;
 
   // Variables
+  public:
+    std::string name;
   protected:
     // Name
-    std::string _name;
     // Shader
     std::string _vshader_path, _fshader_path;
     unsigned int _shaderProgram;
@@ -81,7 +83,7 @@ struct FormatSelector<Line> {
   using type = glm::vert_arr; // we want position and color, so technically vert_arr can work ...
 };
 
-template <typename Object> // _values dépend du type Object
+template <typename Object/*, bool Texture*/> // _values dépend du type Object
 class MatcapRenderer: public Renderer
 {
   typedef typename FormatSelector<Object>::type ValueFormat;
@@ -110,6 +112,7 @@ class MatcapRenderer: public Renderer
 
     // Geom manager
     void add_object(Object *object) {if (object->n_verts > 0) _allgeom.push_back(object);}; 
+    void clear_object() {_allgeom.clear();};
     // void del_geom(Geometry *geom); // No idea how to do that
     //  ...
     //  ...
@@ -137,6 +140,53 @@ class MatcapRenderer: public Renderer
 
     // Render parameters
     RenderMode render_mode; // faire un enum plutot
+};
+
+
+
+class DebugRenderer: public Renderer
+{
+  public:
+    // Constructor
+    DebugRenderer(std::string name, std::string vert_path, std::string frag_path); // Si on connait pas encore les geometries à rendre
+
+    // Init
+    void Init() override;
+
+    // Send geometry to GPU
+    void init_VBO();
+
+    // Render a new frame 
+    void draw(glm::vec3 camera_pos, glm::mat4 rotation, float camera_dist) override;
+    void draw_elements();
+
+    // UI pannel
+    // void UI_pannel() override;
+
+    // Geom manager
+    static void add_line(glm::vec3 start, glm::vec3 end, glm::vec3 color); 
+    static void add_point(glm::vec3 point, glm::vec3 color);
+    // void del_geom(Geometry *geom); // No idea how to do that
+
+    ~DebugRenderer();
+
+  // Variables
+  private:
+    // Geometry
+    // static glm::vec3 start;
+    // static glm::vec3 end;
+    // static glm::vec3 color;
+
+    // Buffers values
+    static std::vector<color_arr> _values_line;
+    static std::vector<color_arr> _values_point;
+    
+    // GL BUffers variables
+    static unsigned int _VAO_line, _VBO_line;
+    static unsigned int _VAO_point, _VBO_point;
+    int _n_values;
+
+    // UI parameters
 };
 
 
@@ -206,6 +256,7 @@ class MarchingRenderer: public Renderer // TODO: grosse duplication de code ici,
 };
 
 template class MatcapRenderer<Geometry>;
+template class MatcapRenderer<GeometryInterpo>;
 template class MatcapRenderer<Curve>;
 //  template class MatcapRenderer<Line>;
 

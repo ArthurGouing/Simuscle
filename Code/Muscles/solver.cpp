@@ -56,6 +56,7 @@ void Solver::resize_solver(int new_n_points)
   q_p.resize(12);
   A.resize(n_free_ddl, n_free_ddl);
   L.resize(n_free_ddl, n_free_ddl);
+  M.resize(n_free_ddl, n_free_ddl);
   M_1.resize(n_free_ddl, n_free_ddl);
   K_lp.resize(n_free_ddl, 12);
   b.resize(n_free_ddl, 1);
@@ -78,38 +79,27 @@ void Solver::update_matrices()
     if (_parameters->solver==direct)
       cholesky_A();
   }
-  else if (_parameters->methode==dynamic_implicit || _parameters->methode==dynamic_explicit)
+  else if (_parameters->methode==dynamic_implicit)
   {
     // Init
     SparseMatrix<float> Id(n_free_ddl, n_free_ddl), K(n_free_ddl, n_free_ddl); 
     Id.setIdentity();
     // Build matrices
-    build_M_1();
+    build_M();
     K = build_K();
-    // std::cout<<"M_1: "<<std::endl;
-    // std::cout<<MatrixXf(M_1)<<std::endl;
-    A = Id + dt*dt*M_1*K;
-    // std::cout<<"M_1.K: "<<std::endl;
-    // std::cout<<MatrixXf(M_1*K)<<std::endl;
-    // std::cout<<"A: "<<std::endl;
-    // std::cout<<MatrixXf(A)<<std::endl;
+    A = M + dt*dt*K;
     if (_parameters->solver==direct)
       cholesky_A();
-    // std::cout<<"LLt: "<<std::endl;
-    // std::cout<<MatrixXf(L*L.transpose())<<std::endl;
-    // std::cout<<"diff"<<std::endl;
-    // std::cout<<MatrixXf(L*L.transpose()-A)<<std::endl;
-    exit(0);
   }
-  else if (_parameters->methode==dynamic_visc_implicit || _parameters->methode==dynamic_visc_explicit)
+  else if (_parameters->methode==dynamic_visc_implicit)
   {
     // Init
     SparseMatrix<float> Id(n_free_ddl, n_free_ddl), K(n_free_ddl, n_free_ddl); 
     Id.setIdentity();
     // Build matrices
-    build_M_1();
+    build_M();
     K = build_K();
-    A = Id + (dt*dt/(1.f+dt*dt))* M_1*K;
+    A = M + (dt*dt/(1.f+dt*dt))* K;
     if (_parameters->solver==direct)
       cholesky_A();
   }
@@ -122,7 +112,7 @@ void Solver::update_matrices()
     build_M_1();
     K = build_K();
     // Compute A
-    A = 2.f*Id - dt*dt * M_1*K;
+    A = 2.f*Id - dt*dt * M_1 * K;
   }
   else if (_parameters->methode==dynamic_visc_explicit)
   {
@@ -130,10 +120,10 @@ void Solver::update_matrices()
     SparseMatrix<float> Id(n_free_ddl, n_free_ddl), K(n_free_ddl, n_free_ddl); 
     Id.setIdentity();
     // Build matrices
-    build_M_1();
+    build_M();
     K = build_K();
     // Compute A
-    A = 1.f/(1.f+dt*dt) * (2.f*Id - dt*dt* M_1*K);
+    A = 1.f/(1.f+dt*dt) * (2.f*Id - dt*dt*M_1*K);
   } else {
     Err_Print("The method doesn't exist. Choose between ['static', 'dynamic_implicit', 'dynamic_visc_implicit','dynamic_explicit', 'dynamic_visc_implicit']", "solver.cpp");
     exit(1);
@@ -152,7 +142,7 @@ void Solver::update_b(Qpoint q_0, Qpoint q_np1)
     SparseVector<float> F(n_free_ddl);
     Id.setIdentity();
     F = build_F(q_0, q_np1);
-    b = 2.f* q - q_n1 + dt*dt* M_1*F;
+    b = 2.f* M*q - M*q_n1 + dt*dt*F;
   }
   else if (_parameters->methode==dynamic_visc_implicit)
   {
@@ -160,27 +150,21 @@ void Solver::update_b(Qpoint q_0, Qpoint q_np1)
     SparseVector<float> F(n_free_ddl);
     Id.setIdentity();
     F = build_F(q_0, q_np1);
-    b = 2.f/(1+dt*dt)* q - q_n1 + dt*dt/(1+dt*dt)* M_1*F;
+    b = 2.f*M/(1+dt*dt)* q - M*q_n1 + dt*dt/(1+dt*dt)*F;
   } 
   else if (_parameters->methode==dynamic_explicit)
   {
     SparseVector<float> F(n_free_ddl);
+    build_M_1();
     F = build_F(q_0, q_np1);
-    b = dt*dt * M_1*F - q_n1;
-    // std::cout << "M_1: "<<std::endl;
-    // std::cout << MatrixXf(M_1) << std::endl;
-    // std::cout << "q_n1: "<<std::endl;
-    // std::cout << VectorXf(q_n1) << std::endl;
-    // std::cout << "F: "<<std::endl;
-    // std::cout << VectorXf(F) << std::endl;
-    // std::cout << "b: "<<std::endl;
-    // std::cout << VectorXf(b) << std::endl;
+    b = dt*dt * M_1 * F - q_n1;
   }
   else if (_parameters->methode==dynamic_visc_explicit)
   {
     SparseVector<float> F(n_free_ddl);
+    build_M_1();
     F = build_F(q_0, q_np1);
-    b = dt*dt/(1.f+dt*dt) * M_1*F - q_n1;
+    b = dt*dt/(1.f+dt*dt) * M_1 * F - q_n1;
   } else {
     Err_Print("The method doesn't exist. Choose between ['static', 'dynamic', 'dynamic_visc']", "solver.cpp");
     exit(1);
@@ -374,9 +358,42 @@ SparseMatrix<float> Solver::build_Ke_glo(MaterialProperty* property)
   return Ke_glo;
 }
 
-void Solver::build_M_1() // TODO faire un update car M_1 est utiliser pour construire F
+void Solver::build_M() // TODO faire un update car M_1 est utiliser pour construire F
 {
   Info_Print("Build M1");
+  //Declaration des variables
+  typedef Triplet<float> T;
+  std::vector<T> tripletList;
+
+  // Build M_1
+  for (int id_pts = 1; id_pts < _curve.n_verts-1; id_pts++) // Pas sur qu'on ait les bone preperty param
+  {
+    // Info_Print("n_free_ddl: "+std::to_string(n_free_ddl));
+    // Info_Print("id_pts: "+std::to_string(id_pts));
+    // Info_Print(_curve.name);
+    MaterialProperty* p_1 = _curve.get_property(id_pts-1);
+    MaterialProperty* p_2 = _curve.get_property(id_pts);
+
+    int i = (id_pts-1)*6;
+    float value = p_1->get_rho()*p_1->get_A() + p_2->get_rho()*p_2->get_A();
+    tripletList.push_back(T(i, i, value));
+    tripletList.push_back(T(i+1, i+1, value));
+    tripletList.push_back(T(i+2, i+2, value));
+    value = p_1->get_rho()*p_1->get_A()*p_1->get_J() + p_2->get_rho()*p_2->get_A()*p_2->get_J();
+    tripletList.push_back(T(i+3, i+3, value));
+    value = p_1->get_rho()*p_1->get_A()*p_1->get_Iy() + p_2->get_rho()*p_2->get_A()*p_2->get_Iy();
+    tripletList.push_back(T(i+4, i+4, value));
+    value = p_1->get_rho()*p_1->get_A()*p_1->get_Iz() + p_2->get_rho()*p_2->get_A()*p_2->get_Iz();
+    tripletList.push_back(T(i+5, i+5, value));
+  }
+
+  // En théorie Ret*M*Re = M car M est diagonale, d'ou M_1 = (1/Mij)i,j
+  M.setFromTriplets(tripletList.begin(), tripletList.end());
+}
+
+void Solver::build_M_1() // TODO faire un update car M_1 est utiliser pour construire F
+{
+  Info_Print("Build M_1");
   //Declaration des variables
   typedef Triplet<float> T;
   std::vector<T> tripletList;
@@ -468,8 +485,6 @@ SparseVector<float> Solver::build_F(Qpoint q_0, Qpoint q_np1)
   }
 
   // Impose p_0 deformation
-  Vec3_Print("q_0 rot: ", q_0.rot);
-  Vec3_Print("q_np1 rot: ", q_np1.rot);
   q_p.coeffRef(0) = q_0.pos.x; q_p.coeffRef(3) = q_0.rot.x;
   q_p.coeffRef(1) = q_0.pos.y; q_p.coeffRef(4) = q_0.rot.y;
   q_p.coeffRef(2) = q_0.pos.z; q_p.coeffRef(5) = q_0.rot.z;
@@ -485,16 +500,21 @@ SparseVector<float> Solver::build_F(Qpoint q_0, Qpoint q_np1)
 
 void Solver::solve_iteration(Qpoint q_0, Qpoint q_np1)
 {
-  Info_Print("Solve the system");
   // for all substep: 
   for (int t = 0; t < _parameters->n_substep; t++) {
     // Compute new F
     update_b(q_0, q_np1);
     // Update values for next timestep
     q_n1 = q; // Update qn-1 before the solver because the solver change directly qn to make it converge to qn+1
+    Value_Print("\nq_n1", q_n1.coeffRef(0));
+    Value_Print("q",q.coeffRef(0));
     // Solver (il faut choisir le solver avant, pour éviter le if à chaque itération, c'est dégeulasse !)
     if (_parameters->methode==dynamic_explicit || _parameters->methode==dynamic_visc_explicit)
     {
+      Info_Print("\nA*q + b");
+      MatrixXf test = A*q;
+      Value_Print("Aq", test.coeffRef(0));
+      Value_Print("b", b.coeffRef(0));
       q = A*q + b;
       continue;
     }

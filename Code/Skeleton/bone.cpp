@@ -175,14 +175,12 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
   {
     if (info.list_info[i].parent == _name) {
 
+      // Create geometry from .off files
       std::string geometry_file = project_path+"Bones/"+info.list_info[i].name+".off";
       _mesh.create_from_file(geometry_file);
+
+      // Store id offset to build VAO
       _mesh.set_id_offset(*indice_offset);
-      // for (int i = 0; i < _mesh.n_verts; i++){
-      //   _mesh.vertex_list[i].id += *indice_offset;
-      // }
-      // _mesh.offset_id = *indice_offset;
-      // Info_Print("id offset in mesh: "+std::to_string(_mesh.offset_id));
       *indice_offset += _mesh.n_verts;
       break;
     }
@@ -194,8 +192,8 @@ void Bone::create_geometry(BonesInfo info, std::string project_path, int *indice
 }
 
 void Bone::link_geometry(MatcapRenderer<Geometry>* renderer)
+// Add the bone geometry to the renderer
 {
-  Info_Print("link bone geometry of "+_name);
   renderer->add_object(&_mesh);
 
   for (size_t ichild = 0; ichild < _childrens.size(); ichild++)
@@ -205,36 +203,34 @@ void Bone::link_geometry(MatcapRenderer<Geometry>* renderer)
 
 }
 
-void Bone::set_indices(std::vector<int>* indices)
-{
-  // indices->insert(indices->end(), _mesh.face_indices.begin(), _mesh.face_indices.end());
-  // for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
-  //   _childrens[ichild].set_indices(indices);
-  // }
-}
+// void Bone::set_indices(std::vector<int>* indices)
+// {
+//   // indices->insert(indices->end(), _mesh.face_indices.begin(), _mesh.face_indices.end());
+//   // for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
+//   //   _childrens[ichild].set_indices(indices);
+//   // }
+// }
 
-void Bone::get_values_size(int* values_size)
-{
-  *values_size += _mesh.n_verts;
-  for (size_t ichild = 0; ichild < _childrens.size(); ichild++) {
-    _childrens[ichild].get_values_size(values_size);
-  }
-}
+// void Bone::get_values_size(int* values_size)
+// {
+//   *values_size += _mesh.n_verts;
+//   for (size_t ichild = 0; ichild < _childrens.size(); ichild++) {
+//     _childrens[ichild].get_values_size(values_size);
+//   }
+// }
 
 void Bone::compute_transform(int frame, mat4 parent_transform)
 {
   mat4 localtransform = mat4(1.0);
-  // if (frame >= _nb_frames)
-  //   frame = _nb_frames-1;
 
-  // translate - la posistion du bone
+  // translate - la posistion globale de la geometry du bone
   vec3 current_trans = _pos;
-  // current_trans = vec3(0., 0., 1.0);
   localtransform = translate(localtransform, current_trans);
+
+  // Rotation 
   if (_dofs.size()==3) // Only rotation
   {
     // rotate the bone
-    //
     localtransform = rotate(localtransform, radians(_dofs[0].get_value(frame)), vec3( 1.0, 0.0, 0.0)); //TODO: les stocker en float directement
     localtransform = rotate(localtransform, radians(_dofs[1].get_value(frame)), vec3( 0.0, 1.0, 0.0));
     localtransform = rotate(localtransform, radians(_dofs[2].get_value(frame)), vec3( 0.0, 0.0, 1.0));
@@ -258,40 +254,41 @@ void Bone::compute_transform(int frame, mat4 parent_transform)
   // translate + la posistion du bone
   localtransform = translate(localtransform, -current_trans);
   
-  //
+  // Apply bone rotation to previous bones transformations
   transformation = parent_transform * localtransform;
   _mesh.set_transform(transformation);
+
   // Recursive
   for (size_t ichild = 0; ichild < _childrens.size(); ichild++) {
     _childrens[ichild].compute_transform(frame, transformation);
   }
 }
 
-void Bone::update_values(std::vector<glm::vert_arr>* values, int frame, bool reset_pose)
-  // Update recursively geometry to the VAO for every bones
-{
-  _mesh.set_transform(transformation);
-  // for (int i = 0; i < _mesh.n_verts; i++) {
-  //   // values->at(i + _indice_offset) = _mesh.vert_values[i];
-  //   if (reset_pose) {
-  //     values->at(i + _indice_offset) = _mesh.vert_values[i];
-  //   } else {
-  //     // TODO: cest transformation devrait être faite sur le GPU
-  //     values->at(i + _indice_offset).pos = vec3(transformation * vec4(_mesh.vert_values[i].pos, 1));
-  //     values->at(i + _indice_offset).normal = vec3(transformation * vec4(_mesh.vert_values[i].normal, 0));
-  //   }
-  // }
-  // // Recursive
-  // for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
-  //   _childrens[ichild].update_values(values, frame, reset_pose);
-  // }
-}
+// void Bone::update_values(std::vector<glm::vert_arr>* values, int frame, bool reset_pose)
+//   // Update recursively geometry to the VAO for every bones
+// {
+//   _mesh.set_transform(transformation);
+//   // for (int i = 0; i < _mesh.n_verts; i++) {
+//   //   // values->at(i + _indice_offset) = _mesh.vert_values[i];
+//   //   if (reset_pose) {
+//   //     values->at(i + _indice_offset) = _mesh.vert_values[i];
+//   //   } else {
+//   //     // TODO: cest transformation devrait être faite sur le GPU
+//   //     values->at(i + _indice_offset).pos = vec3(transformation * vec4(_mesh.vert_values[i].pos, 1));
+//   //     values->at(i + _indice_offset).normal = vec3(transformation * vec4(_mesh.vert_values[i].normal, 0));
+//   //   }
+//   // }
+//   // // Recursive
+//   // for (int ichild = 0; ichild < _childrens.size() ; ichild++) {
+//   //   _childrens[ichild].update_values(values, frame, reset_pose);
+//   // }
+// }
 
-void Bone::animate(float time)
-{
-  Info_Print("Go to time "+std::to_string(time));
-  // For recursive childrens
-}
+// void Bone::animate(float time)
+// {
+//   Info_Print("Go to time "+std::to_string(time));
+//   // For recursive childrens
+// }
 
 void Bone::print_bone(int level)
 {

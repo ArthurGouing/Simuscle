@@ -4,9 +4,10 @@
 
 using namespace glm;
 
-
-MuscleSystem::MuscleSystem(std::string project, MatcapRenderer<Geometry>* renderer, Skeleton *skel) :
-  _geom_renderer(renderer), _crv_renderer(dynamic_cast<MatcapRenderer<Curve>*> (renderer)), _skel(skel), line_width(4.f), point_width(8.f), gravity(true)
+MuscleSystem::MuscleSystem(std::string project, MatcapRenderer<Geometry>* geom_renderer, 
+                                                MatcapRenderer<GeometryInterpo>* interpo_renderer, 
+                                                MatcapRenderer<Curve>* crv_renderer, Skeleton *skel) :
+  _geom_renderer(geom_renderer), _interpo_renderer(interpo_renderer), _crv_renderer(crv_renderer), _skel(skel), line_width(4.f), point_width(8.f), gravity(true)
 {
   Title_Print("Init Muscle System");
 
@@ -19,12 +20,28 @@ MuscleSystem::MuscleSystem(std::string project, MatcapRenderer<Geometry>* render
   int offset = 0;
   for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].create_geometry(&offset);  // can be dones ine the read muscles parameters
-    Info_Print("offset: "+std::to_string(offset));
   }
+
+  /******** Build muscles interpolation ********/
+  int offset_2 = 0;
+  for(auto&  muscle : muscles) {
+    muscle.create_interpolated_geometry(&offset_2);
+  }
+
+  
+  /******** compute curve offset ********/
+  int offset_id = 0;
+  for(auto& muscle : muscles) {
+    muscle._curve.set_id_offset(offset_id);
+    offset_id+= muscle._curve.n_verts;
+  }
+
 
   /******** Link meshes to the renderer ********/
   for (size_t i = 0; i < muscles.size(); i++) {
     _geom_renderer->add_object(&(muscles[i]._mesh));
+    _interpo_renderer->add_object(&(muscles[i]._interpo_mesh));
+    _crv_renderer->add_object(&(muscles[i]._curve));
   }
 
   /******** Other parameters ********/
@@ -66,7 +83,6 @@ void MuscleSystem::read_muscles_parameters(std::string file_name, std::string pr
     } else if (buff == "]") {
       return;
     }
-    Info_Print("name: "+name);
     info >> buff;
     if (buff == "\"geometry\":"){
       info >> buff;
@@ -97,10 +113,9 @@ void MuscleSystem::read_muscles_parameters(std::string file_name, std::string pr
 
     // Add muscle to the muscles list
     Muscle muscle(name, geometry_path, bone_insertion_1, bone_insertion_2, n_point, P0, P1, P2, P3, &solver_param);
-    muscles.push_back(muscle);
+    muscles.push_back(Muscle(name, geometry_path, bone_insertion_1, bone_insertion_2, n_point, P0, P1, P2, P3, &solver_param));
 
-    info >> buff; // buff == },
-
+    info >> buff; // buf
     if(buff == "}"){
       info.close();
       break;
@@ -204,8 +219,9 @@ void MuscleSystem::solve(int frame)
   for (size_t i = 0; i < muscles.size(); i++) {
     muscles[i].solve(frame);
   }
-  _geom_renderer->update_VBO();
-  _crv_renderer->update_VBO();
+  // _geom_renderer->update_VBO();
+  _interpo_renderer->update_VBO();
+  // _crv_renderer->update_VBO();
 }
 
 void MuscleSystem::UI_pannel()
@@ -228,6 +244,7 @@ void MuscleSystem::UI_pannel()
   }
 
   ImGui::SliderFloat("Epsilon", &solver_param.epsilon, 0.0000001, 10);
+  ImGui::DragFloat("Alpha", &solver_param.alpha, 0.0000001, 1000);
   const char* simu_type_choice[] = { "static", "dynamic_implicit", "dynamic_visc_implicit", "dynamic_explicit", "dynamic_visc_explicit"};
   const char* preview = simu_type_choice[solver_param.methode];
   if (ImGui::BeginCombo("Simulation type", preview, flags)) {
@@ -269,13 +286,13 @@ void MuscleSystem::UI_pannel()
   // get char length
   ImGui::Separator();
   static int item_current_idx = 0; // Here we store our selection data as an index.
-  std::string s = muscles[item_current_idx]._name;
+  std::string s = muscles[item_current_idx].name;
   if (ImGui::BeginCombo("Select muscle", s.c_str(), flags))
   {
       for (int i = 0; i < int(muscles.size()); i++) // WARN: pas sur que ce soit une bonne idée de cast in long signed int en int
       {
           const bool is_selected = (item_current_idx == i);
-          s = muscles[i]._name;
+          s = muscles[i].name;
           if (ImGui::Selectable(s.c_str(), is_selected))
               item_current_idx = i;
 
