@@ -25,9 +25,11 @@ Skeleton::Skeleton(std::string project, MatcapRenderer<Geometry>* init_renderer)
   // bonesinfo.print();
 
   /******** Load bone meshes ********/
-  Info_Print("Loading bones meshes");
+  Info_Print("Loading bones geometries: ");
   int indice_offset = 0;
   Root_Bone.create_geometry(bonesinfo, project, &indice_offset);
+
+  Info_Print("Link geometries to renderer ("+renderer->name+"). ");
   Root_Bone.link_geometry(renderer);
 
   Info_Print("Done");

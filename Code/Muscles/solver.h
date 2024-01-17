@@ -46,13 +46,14 @@ enum Solver_type {iteratif=0, direct=1};
 
 struct Solver_param {
   Solver_param(): 
-    gravity(true), n_substep(50), kmax(30), epsilon(0.000000001), methode(0), solver(1) {};
+    gravity(true), n_substep(20), kmax(30), epsilon(0.000000001), alpha(0.2), methode(4), solver(1) {};
 
   bool gravity;  // Add gravity force
   bool impulse;  // Add dirac force (add force during 1 timestep so not really a dirac)
   int n_substep; // The number of step within the frame to compute
   int kmax;      // The max number of iteraation of ResMin
   float epsilon; // The tolerance of the solution of ResMin
+  float alpha;   // le Coefficient de viscosité artificielle
   // bool impulse; //  ???
   int methode; // Choose beetween ["static", "dynamic", "dynamic_visc"]
   int solver;  // Choose beetween ["iteratif", "direct"]
@@ -70,6 +71,7 @@ class Solver
 
     void update_matrices();
     void build_M_1();
+    void build_M();
     Eigen::SparseMatrix<float> build_K();
     Eigen::SparseMatrix<float> build_Ke_glo(MaterialProperty* property);
     Eigen::SparseMatrix<float> build_Re(glm::vec3 dir);
@@ -91,9 +93,10 @@ class Solver
     bool impulse; // to apply an impulse on the muscle
     bool gravity; // to apply gravity to muscele
 
+  public: // Variables
+    int n_points;
 
   private:
-    int n_points;
     int n_ddl_tot; // size of $q_f$
     int n_free_ddl; // depend of the element used and the method
     int n_const_ddl; // always 2
@@ -107,7 +110,8 @@ class Solver
     // intermediaire needed matrix for F building
     Eigen::SparseVector<float> q_p; // change when the frame change
     Eigen::SparseMatrix<float> K_lp; // chagne when K change (i.e R||D||B)
-    Eigen::SparseMatrix<float> M_1; // ne change jamais ! 
+    Eigen::SparseMatrix<float> M; // ne change jamais ! (sauf changement des propriétés)
+    Eigen::SparseMatrix<float> M_1; // ne change jamais ! (sauf changement des propriétés)
  
     // Solution exploitable
     Deformations _solution; 
@@ -118,6 +122,8 @@ class Solver
     // simulation parameters
     float dt;
     int n_substep;
+
+  public:
     Solver_param* _parameters;
 
     // Solution cache

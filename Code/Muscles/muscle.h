@@ -20,14 +20,21 @@
 class Muscle
 {
   public:
-    Muscle(){};
+    // Muscle(){};
+    // Constructor
     Muscle(std::string name, std::string geometry_path, Bone* insertion_begin, Bone* insertion_end,
         int n_points, glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, Solver_param* solver_param);
+    // Move Constructor (used in push_back)
+    Muscle(Muscle&& muscle); // useless... pushback utilise la copy
+    // COpy Constructor
+    Muscle(const Muscle&);
     ~Muscle();
 
     void solve(int frame);
 
     void create_geometry(int* indice_offset);
+    void create_interpolated_geometry(int* indice_offset);
+
     // void update_values_crv(std::vector<glm::vert_arr>* values, int frame);
     // void update_values(std::vector<glm::vert_arr>* values, int frame);
 
@@ -35,12 +42,15 @@ class Muscle
     void UI_pannel();
 
   public:
-    std::string _name;
+    std::string name;
+
+    Curve _curve;
+    Solver _solver; // A mettre dans curve ? ca revient au meme...
 
     Geometry _mesh;
-    Curve _curve;
-    // MaterialProperty _property; // cf in curve
-    Solver _solver;
+    GeometryInterpo _interpo_mesh;
+    // MaterialProperty _property; // cf in curve // Pourtant c'est propre au muscle non ? 
+                                  // Non, si on veut faire une partie muscle et une partie tendon avec des propries différents
 
   private:
     std::string _geometry_path;
@@ -48,6 +58,7 @@ class Muscle
     Bone* _insertion_end;
 
     int _id_offset;
+    float pi;
 };
 
 #endif // !MUSCLE_H

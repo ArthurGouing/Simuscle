@@ -11,10 +11,6 @@ void Title_Print(std::string msg, bool ansi_color)
   else std::cout << msg << std::endl;
 }
 
-void Info_Print(std::string msg)
-{
-  std::cout << "  " << msg << std::endl;
-}
 
 void Warn_Print(std::string msg, bool ansi_color)
 {
@@ -136,7 +132,6 @@ GLenum glCheckError_(const char *file, int line)
         }
         std::cout << error << " | " << file << " (" << line << ")" << std::endl;
     }
-    std::cout << "End of error list" << std::endl;
     return errorCode;
 }
 

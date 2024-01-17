@@ -7,8 +7,8 @@ using namespace glm;
 
 //******** ABSTRACT CLASS ******** 
 
-Renderer::Renderer(std::string name, std::string vert_source, std::string frag_source) :
-  _name(name), _vshader_path(vert_source), _fshader_path(frag_source)
+Renderer::Renderer(std::string renderer_name, std::string vert_source, std::string frag_source) :
+  name(renderer_name), _vshader_path(vert_source), _fshader_path(frag_source)
 {
 }
 
@@ -21,7 +21,7 @@ void Renderer::update_projection(int width, int height, float fov, float zNear, 
 
 void Renderer::load_shader()
 {
-  Info_Print("Compite shaders: "+_vshader_path+" and "+_fshader_path);
+  Info_Print("  Compile shaders: "+_vshader_path+" and "+_fshader_path);
   // Format frag end vert
   std::ifstream vertexShaderFile(_vshader_path);
   std::ostringstream vertexBuffer;
@@ -71,10 +71,6 @@ void Renderer::load_shader()
   glAttachShader(_shaderProgram, fragmentShader);
   glLinkProgram(_shaderProgram);
 
-  GLenum err;
-  err = glGetError();
-  std::cout << "OpenGL Error: " << err << std::endl;
-
   // check for linking errors
   glGetProgramiv(_shaderProgram, GL_LINK_STATUS, &success);
   if (!success) {
@@ -83,7 +79,6 @@ void Renderer::load_shader()
     exit(1);
   }
 
-  Info_Print("\nOpenGL Error: ");
   glCheckError();
 
   /******** Cleaning ********/
@@ -96,7 +91,7 @@ void Renderer::load_shader()
 void Renderer::UI_pannel()
 {
   std::string title, text;
-  title = "Renderer "+ _name;
+  title = "Renderer '"+ name +"'";
   ImGui::Begin(title.c_str());
   text = "Render vertex shader: " + _vshader_path;
   ImGui::Text(text.c_str());
@@ -129,28 +124,24 @@ MatcapRenderer<Object>::MatcapRenderer(std::string name, std::string vert_path, 
 template <typename Object>
 void MatcapRenderer<Object>::Init()
 {
-  Info_Print("Load Texture : "+_texture_path);
+  Info_Print("  Load Texture : "+_texture_path);
   load_texture(_texture_path);
 
-  Info_Print("Create VBO");
+  Info_Print("  Create VBO");
   init_VBO();
 }
 
 template <typename Object>
 void MatcapRenderer<Object>::load_texture(std::string texture_path)
 {
-  Info_Print("Load texture");
   glGenTextures(1, &_textureid);
-  Info_Print("Bind texture");
   glBindTexture(GL_TEXTURE_2D, _textureid); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-  Info_Print("Load parameters");
   // set the texture wrapping parameters
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   // set texture filtering parameters
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  Info_Print("Done");
 
   // load image, create texture and generate mipmaps
   // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
@@ -182,8 +173,6 @@ void MatcapRenderer<Object>::init_VBO()
   glGenBuffers(1, &_EBO);
 
   // Create values and indices from the geometries (or at least give the max size)
-  Info_Print("Nb of geometry to render: "+std::to_string(_allgeom.size()));
-
   for (const auto& obj : _allgeom)
   {
     init_val_id(obj);
@@ -207,11 +196,11 @@ void MatcapRenderer<Object>::init_VBO()
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  Info_Print("Unbind EBO ???");
+  Info_Print("   (Unbind EBO ?)");
 }
 
-template <>
-void MatcapRenderer<Geometry>::init_val_id(Geometry* geom)
+template <typename Object>
+void MatcapRenderer<Object>::init_val_id(Object* geom) // Cas par default valable pour les différents classe geometry
 {
   // Values
   for (int i = 0; i < geom->n_verts; i++)
@@ -251,7 +240,6 @@ void MatcapRenderer<Curve>::init_val_id(Curve* crv)
 template <typename Object>
 void MatcapRenderer<Object>::update_VBO()
 {
-  Info_Print("Update VBO");
   // update values and indices
   for(const auto& geom : _allgeom)
   {
@@ -309,7 +297,6 @@ void MatcapRenderer<Object>::draw(vec3 camera_pos, mat4 rotation, float camera_d
     Err_Print("The render_mode '" + std::to_string(render_mode) + "' is not valid. Choose between ['mesh', 'wire', 'stick'].", "muscle_system.cpp");
   }
   // n_values: 
-  Info_Print(std::to_string(_n_values));
   // _n_values = 5000 * 6;
 
   // Draw elements
@@ -318,15 +305,22 @@ void MatcapRenderer<Object>::draw(vec3 camera_pos, mat4 rotation, float camera_d
 
   glBindVertexArray(0);
 }
-template<>
-void MatcapRenderer<Geometry>::draw_elements()
+template<typename Object>
+void MatcapRenderer<Object>::draw_elements()
 {
   glDrawElements(GL_TRIANGLES, _n_values, GL_UNSIGNED_INT, 0);
 }
 template<>
 void MatcapRenderer<Curve>::draw_elements()
 {
+  // Enlever le depth test
+  glDisable(GL_DEPTH_TEST);
+  glLineWidth(0.f);
   glDrawElements(GL_LINES, _n_values, GL_UNSIGNED_INT, 0);
+  glPointSize(3.f);
+  glDrawElements(GL_POINTS, _n_values, GL_UNSIGNED_INT, 0);
+  glEnable(GL_DEPTH_TEST);
+  // et le remettre
 }
 template<>
 void MatcapRenderer<Line>::draw_elements()
@@ -346,6 +340,153 @@ MatcapRenderer<Object>::~MatcapRenderer()
   glDeleteBuffers(1, &_EBO);
 }
 
+//******** Debug RENDERER ********
+
+// vec3 DebugRenderer::start;
+// vec3 DebugRenderer::end;
+// vec3 DebugRenderer::color;
+
+std::vector<color_arr> DebugRenderer::_values_line;
+std::vector<color_arr> DebugRenderer::_values_point;
+
+unsigned int DebugRenderer::_VAO_line;
+unsigned int DebugRenderer::_VBO_line;
+unsigned int DebugRenderer::_VAO_point;
+unsigned int DebugRenderer::_VBO_point;
+
+
+DebugRenderer::DebugRenderer(std::string name, std::string vert_path, std::string frag_path):
+  Renderer(name, vert_path, frag_path)
+{}
+
+
+void DebugRenderer::add_line(vec3 new_start, vec3 new_end, vec3 new_color)
+ {
+   Info_Print("add line");
+   color_arr arr_1;
+   arr_1.x = new_start.x; arr_1.r = new_color.x;
+   arr_1.y = new_start.y; arr_1.g = new_color.y;
+   arr_1.z = new_start.z; arr_1.b = new_color.z;
+   color_arr arr_2;
+   arr_2.x = new_end.x; arr_2.r = new_color.x;
+   arr_2.y = new_end.y; arr_2.g = new_color.y;
+   arr_2.z = new_end.z; arr_2.b = new_color.z;
+
+  _values_line.push_back(arr_1);
+  _values_line.push_back(arr_2);
+
+  // Update VBO
+  // glBindBuffer(GL_ARRAY_BUFFER, _VBO_line);
+  // glBufferSubData(GL_ARRAY_BUFFER, 0, _values_line.size() * 6 * sizeof(float), _values_line.data()); // cf la doc pour l'utiliser correctement
+  // glBindBuffer(GL_ARRAY_BUFFER, 0);
+ }
+
+void DebugRenderer::add_point(vec3 point, vec3 color) //TODO mettre color facultarif avec un mambre base_color
+{
+  color_arr arr;
+  arr.x = point.x; arr.r = color.x;
+  arr.y = point.y; arr.g = color.y;
+  arr.z = point.z; arr.b = color.z;
+
+  _values_point.push_back(arr);
+
+  // Update VBO
+  // glBindBuffer(GL_ARRAY_BUFFER, _VBO_point);
+  // glBufferSubData(GL_ARRAY_BUFFER, 0, _values_point.size() * 6 * sizeof(float), _values_point.data()); // cf la doc pour l'utiliser correctement
+  // glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void DebugRenderer::Init()
+{
+  Info_Print("  Create VBO");
+  init_VBO();
+}
+
+void DebugRenderer::init_VBO()
+{
+  // Init line VBO
+  glGenVertexArrays(1, &_VAO_line);
+  glGenBuffers(1, &_VBO_line);
+
+  glBindVertexArray(_VAO_line);
+  glBindBuffer(GL_ARRAY_BUFFER, _VBO_line);
+
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*1000, _values_line.data(), GL_STATIC_DRAW);
+ 
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+ 
+  // Init point VBO
+  glGenVertexArrays(1, &_VAO_point);
+  glGenBuffers(1, &_VBO_point);
+
+  glBindVertexArray(_VAO_point);
+  glBindBuffer(GL_ARRAY_BUFFER, _VBO_point);
+
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float)*6*500, _values_point.data(), GL_STATIC_DRAW);
+ 
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+
+  //Unbind
+  glBindBuffer(GL_ARRAY_BUFFER, 0); 
+  glBindVertexArray(0); 
+}
+
+void DebugRenderer::draw(glm::vec3 camera_pos, glm::mat4 rotation, float camera_dist)
+{
+  // init_VBO();
+  glUseProgram(_shaderProgram);
+
+  // Compute Camera transform
+  mat4 view(1.0f);
+  view = translate(view, vec3(0.0f, 0.0f, -camera_dist));
+  view = view * rotation;
+  view = translate(view, camera_pos);
+  
+  mat4 vpmat = _projection * view;
+  vpmat = scale(vpmat, vec3(1.f, 1.f, 1.f));
+
+  // Send variables to the GPU
+  int modelLoc = glGetUniformLocation(_shaderProgram, "vp_mat");
+  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(vpmat));
+  glCheckError();
+ 
+  glDisable(GL_DEPTH_TEST);
+  // Draw line
+  glBindVertexArray(_VAO_line);
+  glBindBuffer(GL_ARRAY_BUFFER, _VBO_line);
+  glLineWidth(3.f);
+  glDrawArrays(GL_LINES, 0, _values_line.size());
+
+  // Draw point
+  glBindVertexArray(_VAO_point);
+  glBindBuffer(GL_ARRAY_BUFFER, _VBO_point);
+  glPointSize(3.f);
+  glDrawArrays(GL_POINTS, 0, _values_point.size());
+  glEnable(GL_DEPTH_TEST);
+
+  // _values_line.clear();
+  // _values_point.clear();
+}
+
+
+DebugRenderer::~DebugRenderer()
+{
+  // Renderer interface part
+  glDeleteProgram(_shaderProgram);
+
+  glDeleteVertexArrays(1, &_VAO_line);
+  glDeleteBuffers(1, &_VBO_line);
+
+  glDeleteVertexArrays(1, &_VAO_point);
+  glDeleteBuffers(1, &_VBO_point);
+}
+
 
 //******** GROUND RENDERER ********
 
@@ -357,7 +498,7 @@ GroundRenderer::GroundRenderer(std::string name, std::string vert_path, std::str
 
 void GroundRenderer::Init()
 {
-  Info_Print(_name + " : Create VBO");
+  Info_Print("  Create VBO");
   init_VBO();
 }
 
@@ -446,7 +587,7 @@ MarchingRenderer::MarchingRenderer(std::string name, std::string vert_path, std:
 
 void MarchingRenderer::Init()
 {
-  Info_Print("Create VBO");
+  Info_Print("  Create VBO");
   init_VBO();
 }
 
@@ -481,8 +622,6 @@ void MarchingRenderer::draw(glm::vec3 camera_pos, glm::mat4 rotation, float came
   glDepthMask(GL_FALSE);
 
   // Send parameters to GPU
-  float resolution[2] = {_viewport_size.x, _viewport_size.y}; //TODO:faire directement un ptr du _viewport_size
-  Info_Print("resolution: "+std::to_string(_viewport_size.x)+", "+std::to_string(_viewport_size.y));
   rotation = transpose(rotation);
   glUniform2fv(glGetUniformLocation(_shaderProgram, "i_resolution"), 1, &_viewport_size[0]);
   glUniform3fv(glGetUniformLocation(_shaderProgram, "camera_pos"), 1, &camera_pos[0]);

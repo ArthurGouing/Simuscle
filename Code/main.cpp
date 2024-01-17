@@ -46,24 +46,34 @@ int main(int argc, char *argv[])
   // Create render pipeline
   RenderManager r_manager;
   // Create Renderer
-  Renderer *skel_renderer  = new MatcapRenderer<Geometry>("skeleton shader", "skin_shader.vert", "skin_shader.frag", "white_matcap_2.jpg");
-  Renderer *musc_renderer  = new MatcapRenderer<Geometry>("muscle shader", "skin_shader.vert", "skin_shader.frag", "red_matcap.png");
-  // Renderer *curve_renderer = new CurveRenderer(&r_manager, "crv_shader.vert", "crv_shader.frag");
-  Renderer *bgrnd_renderer = new MarchingRenderer("Background shader", "background_raymarching.vert", "background_raymarching.frag");
-  Renderer *grnd_renderer = new GroundRenderer("Ground shader", "ground_shader.vert", "ground_shader.frag");
+  Renderer *skel_renderer   = new MatcapRenderer<Geometry>("Skeleton_shader", "skin_shader.vert", "skin_shader.frag", "white_matcap_2.jpg");
+  Renderer *musc_renderer   = new MatcapRenderer<Geometry>("Muscle_shader", "skin_shader.vert", "skin_shader.frag", "red_matcap.png");
+  Renderer *musc_renderer_2 = new MatcapRenderer<GeometryInterpo>("muscle_interpo_shader", "skin_shader.vert", "skin_shader.frag", "red_matcap.png");
+  Renderer *curve_renderer  = new MatcapRenderer<Curve>("curve_shader", "crv_shader.vert", "crv_shader.frag", "white_matcap_2.jpg");
+  Renderer *bgrnd_renderer  = new MarchingRenderer("Background_shader", "background_raymarching.vert", "background_raymarching.frag");
+  Renderer *grnd_renderer   = new GroundRenderer("Ground_shader", "ground_shader.vert", "ground_shader.frag");
+  Renderer *debug_renderer  = new DebugRenderer("debug_render", "line.vert", "line.frag");
   // Renderer *line = new LineRenderer(&r_manager, "line_shader.vert", "line_shader.frag");
   // Renderer matcap_render(&skeleton, &muscles/*, &character*/);
-  //
+
+  // dynamic_cast<DebugRendererLine*>(debug_line_renderer)->add_line(glm::vec3(0.f,0.f,0.f), glm::vec3(0.f,0.f,1.f));
+
+
   r_manager.add_renderer(bgrnd_renderer);
   r_manager.add_renderer(grnd_renderer);
-  r_manager.add_renderer(musc_renderer);
   r_manager.add_renderer(skel_renderer);
+  // r_manager.add_renderer(musc_renderer);
+  r_manager.add_renderer(musc_renderer_2);
+  // r_manager.add_renderer(curve_renderer);
+  r_manager.add_renderer(debug_renderer);
   // ...
 
   // Create Objects
   Skeleton skeleton(project, dynamic_cast<MatcapRenderer<Geometry>*>(skel_renderer) /*, Timeline or SimulationManager*/);
-  MuscleSystem muscles(project, dynamic_cast<MatcapRenderer<Geometry>*>(musc_renderer), &skeleton);
-  //Skin character(project, &skeleton, &muscles);
+  MuscleSystem muscles(project, dynamic_cast<MatcapRenderer<Geometry>*>(musc_renderer),
+                                dynamic_cast<MatcapRenderer<GeometryInterpo>*>(musc_renderer_2),
+                                dynamic_cast<MatcapRenderer<Curve>*>(curve_renderer),  &skeleton);
+  //Skin character(project, dynamic_cast<MatcapRenderer<Geometry>*>(skin_renderer), &skeleton, &muscles);
 
   // Init the application
   App Simuscle_app(&r_manager, &skeleton, &muscles);

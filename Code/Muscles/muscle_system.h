@@ -16,6 +16,7 @@
 #include <sstream>
 #include <vector>
 #include <glm/glm.hpp>
+#include <utility> // for std::move
 
 // File
 #include "muscle.h"
@@ -29,18 +30,16 @@ class MuscleSystem
 {
   public:
     // Init functions
-    MuscleSystem(std::string project, MatcapRenderer<Geometry>* renderer, Skeleton *skel);
-
+    MuscleSystem(std::string project, MatcapRenderer<Geometry>* geom_renderer,
+                                      MatcapRenderer<GeometryInterpo>* interpo_renderer,
+                                      MatcapRenderer<Curve>* crv_renderer,
+                                      Skeleton *skel
+                );
     void read_muscles_parameters(std::string muscle_file, std::string project);
     glm::vec3 read_point(std::ifstream& info);
 
     // Muscle computation
     void solve(int frame);
-
-    // void init_crv_buffers();
-    // void update_curve_buffers(int frame);
-    // void draw_curves();
-
 
     // Get/Set functions
     void set_mode(std::string mode) {render_mode = mode;};
@@ -53,6 +52,7 @@ class MuscleSystem
   private:
     // Other class link
     MatcapRenderer<Geometry> *_geom_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?
+    MatcapRenderer<GeometryInterpo> *_interpo_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?
     MatcapRenderer<Curve> *_crv_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?
     Skeleton *_skel;
 

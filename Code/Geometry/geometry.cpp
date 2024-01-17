@@ -3,14 +3,23 @@
 
 #include "geometry.h"
 
+
+#include "Render/renderer.h"
+// DebugRenderer::add_line(glm::vec3(0.f,0.f,0.f), glm::vec3(1.f,0.f,1.f), glm::vec3(0.f, 1.f, 0.f));
+// DebugRenderer::add_point(vert_pos, glm::vec3(0.2f, 0.2f, 0.6f));
+//
 using namespace glm;
 
 Geometry::Geometry():
   name("empty"), n_verts(0), n_faces(0), offset_id(0), _transformation(mat4(1.f))
 {}
 
-Geometry::Geometry(std::string file):
-  name(file), n_verts(0), n_faces(0), offset_id(0), _transformation(mat4(1.f))
+Geometry::Geometry(std::string init_name):
+  name(init_name), n_verts(0), n_faces(0), offset_id(0), _transformation(mat4(1.f))
+{}
+
+Geometry::Geometry(std::string init_name, std::string file):
+  name(init_name), n_verts(0), n_faces(0), offset_id(0), _transformation(mat4(1.f))
 {
   create_from_file(file);
 }
@@ -18,7 +27,6 @@ Geometry::Geometry(std::string file):
 void Geometry::create_from_file(std::string file)
 {
   name = file;
-  std::cout << "  " << file << std::endl;
   // Declaration des variable
   std::ifstream geom_file(file);
   std::string buff;
@@ -36,9 +44,7 @@ void Geometry::create_from_file(std::string file)
   ssbuff >> n_verts;
   ssbuff >> n_faces;
 
-  Info_Print("Reading " + file);
-  Info_Print("  Number of vertices = " + std::to_string(n_verts));
-  Info_Print("  Number of faces = " + std::to_string(n_faces));
+  Info_Print("  Reading " + file + "   (vertices = " + std::to_string(n_verts) + " || faces = " + std::to_string(n_faces) + ")");
 
   // Process vertex
   for (int id = 0; id < n_verts; id++)
@@ -157,6 +163,55 @@ vert_arr Geometry::compute_value(int id)
   vert.pos = vec3(_transformation * vec4(vertex_list[id].pos, 1.f));
   vert.normal = vec3(_transformation * vec4(vertex_list[id].normal, 1.f));
   return vert;
+}
+
+vec3 Geometry::ray_intersection(Ray r)
+{
+  // La collisiont ray_point, itére sur les vertices => bc moins d'element a parcourir car on a moins de points que de face
+  float t_min = std::numeric_limits<float>::max();
+  vec3 P;
+  for(auto& face : face_list) //TODO : better with faces ptr ???
+  {
+    // Collision point between triangle plane and ray
+    float t = (face.distance - dot(r.origin, face.normal) / dot(r.direction, face.normal));
+    if (t<0 or t>t_min) continue;
+
+    vec3 P_temp  = r.cast(t);
+    vec3 v1 = face.get_v1_pos();
+    vec3 v2 = face.get_v2_pos();
+    vec3 v3 = face.get_v3_pos();
+    
+    // Test if the point is in the triangle (Same Side technic)
+    bool AB_side = dot(cross(v2-v1, P_temp-v1), cross(v2-v1, v3-v1)) >= 0;
+    bool BC_side = dot(cross(v3-v2, P_temp-v2), cross(v3-v2, v1-v2)) >= 0;
+    bool AC_side = dot(cross(v3-v1, P_temp-v1), cross(v3-v1, v2-v1)) >= 0;
+
+    if (AB_side && BC_side && AC_side) {
+      P = P_temp; // TODO: En pratique on pourrait return au 1er P trouver, on ne devrait pas avoir plusieurs collisions possible
+    }
+  }
+  return P;
+}
+
+vec3 Geometry::ray_intersection_approx(Ray r)
+{
+  // La collisiont ray_point, itére sur les vertices => bc moins d'element a parcourir car on a moins de points que de face
+  float value = std::numeric_limits<float>::max();
+  vec3 P;
+  for(auto& v : vertex_list) //TODO : better with faces ptr ???
+  {
+    vec3 intersect = r.origin + dot(v.pos-r.origin, r.direction) * r.direction;
+    float test_value = length(v.pos - intersect);
+    if (test_value < value){
+      value = test_value;
+      P = v.pos;
+    }
+    // Info_Print("")
+    // Value_Print("value", value);
+    // float ration = value/length(v.pos-r.origin);
+    // Value_Print("ratio", ration);
+  }
+  return P;
 }
 
 Geometry::~Geometry()

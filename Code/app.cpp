@@ -140,7 +140,7 @@ App::App(RenderManager* r_manager, Skeleton* skeleton, MuscleSystem* muscles) :
   firstMouse(true), 
   mouse_on_viewport(false), camera_is_moving(false), rot(false), mov(false), scale(false),
   lastframe(0),
-  is_simulating(false), _swap_interval(3), 
+  is_simulating(true), _swap_interval(3), 
   img_size(1.0f), pannel_size(vec2(1291.0f, 819.0f))
 
 {
@@ -333,8 +333,8 @@ void App::Run()
     _skel->compute(_timeline.get_frame());
 
     /********* Physics Solver ********/
-    // if (is_simulating)
-    //   _musc->solve(_timeline.get_frame());
+    if (is_simulating)
+      _musc->solve(_timeline.get_frame());
 
 
     /******** Rendering ********/
