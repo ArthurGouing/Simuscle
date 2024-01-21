@@ -1,0 +1,51 @@
+.features {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.featureImg {
+  object-fit: contain;
+  height: 60vh;
+  border-radius: 5%;
+}
+
+.text {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.title_intro {
+  text-align: center;
+  text-justify: inter-word;
+}
+
+.text_intro {
+  padding: 0 12%;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+hr {
+  background: radial-gradient(circle at center, white , rgb(0 0 0 / 0%));
+  border-width: 1em;
+  margin-top: 2em;
+  margin-left: 22%;
+  margin-right: 22%;
+}
+
+.hr {
+   display: block;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  margin-left: auto;
+  margin-right: auto;
+}
