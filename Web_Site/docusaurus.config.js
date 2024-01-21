@@ -86,7 +86,7 @@ const config = {
         },
         items: [
           {to: '/blog', label: 'News', position: 'left'},
-          {to: '/docs/intro', label: 'Download', position: 'left'},
+          {to: '/docs/download', label: 'Download', position: 'left'},
           {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
@@ -108,7 +108,7 @@ const config = {
             items: [
               {
                 label: 'Get Started',
-                to: '/docs/intro',
+                to: '/docs/presentation',
               },
               {
                 label: '[More to go...]',
@@ -125,7 +125,7 @@ const config = {
               },
               {
                 label: 'GitHub',
-                href: 'https://github.com/facebook/docusaurus',
+                href: 'https://github.com/ArthurGouing/Simuscle',
               },
             ],
           },

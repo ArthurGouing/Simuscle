@@ -44,7 +44,7 @@ function HomepageHeader() {
       <p className={styles.text_subtitle} ref={elementRef}>{siteConfig.tagline}</p>
         <Link
           className={styles.buttons}
-          to="/docs/intro">
+          to="/docs/presentation">
           Get started
         </Link>
     </div>
