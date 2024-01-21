@@ -14,6 +14,7 @@
 #include "timeline.h"
 #include "bonesinfo.h"
 #include "bone.h"
+
 class Skeleton
 {
   public:
@@ -27,8 +28,8 @@ class Skeleton
 
     void compute(int frame); // Il manque un trux après compute, mais je sais pas quoi mettre
  
-    void draw_skeleton_stick();
-    void draw_skeleton_mesh(bool wire_mode=false);
+    void draw_skeleton_stick();  // Depreciated
+    void draw_skeleton_mesh(bool wire_mode=false); // Depreciated
 
     Bone* find_bone(std::string bone_name);
 

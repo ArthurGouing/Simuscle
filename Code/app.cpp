@@ -182,6 +182,13 @@ void App::Init()
   gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
   /******** Render Init *******/
+  glm::vec3 p = glm::vec3(0.25f, 0.0f, 1.3489f);
+  float d = _musc->muscles[0]._curve.sdf_approx(p, _musc->muscles[0]._interpo_mesh.lagrange2D);
+  Value_Print("d", d);
+
+  DebugRenderer::add_point(p, glm::vec3(0.2f, 0.2f, 1.f));
+
+
   Title_Print("Init Renderer");
   _r_manager->Init(int(pannel_size.x), int(pannel_size.y));
 
@@ -189,6 +196,7 @@ void App::Init()
   // (la geom est existe déjà, il faut just la lier au renderer)
   // _musc->link_geometry();
   // ...
+  // sdf curve-point test
   
 
   /******** Init ImGUI ********/
@@ -327,6 +335,9 @@ void App::Run()
 
     /********* Timeline ********/
     _timeline.time_step();
+
+// DebugRenderer::add_line(glm::vec3(0.f,0.f,0.f), glm::vec3(1.f,0.f,1.f), glm::vec3(0.f, 1.f, 0.f));
+
 
 
     /********* Armature animation ********/

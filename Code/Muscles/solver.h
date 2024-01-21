@@ -46,7 +46,7 @@ enum Solver_type {iteratif=0, direct=1};
 
 struct Solver_param {
   Solver_param(): 
-    gravity(true), n_substep(20), kmax(30), epsilon(0.000000001), alpha(0.2), methode(4), solver(1) {};
+    gravity(true), n_substep(2), kmax(10), epsilon(0.000000001), alpha(0.2), methode(1), solver(1) {};
 
   bool gravity;  // Add gravity force
   bool impulse;  // Add dirac force (add force during 1 timestep so not really a dirac)

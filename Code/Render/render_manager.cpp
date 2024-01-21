@@ -16,7 +16,8 @@ RenderManager::RenderManager():
   _r0(1.),
   _del_fbo(false)
 {
-  _r0 = rotate(_r0, radians(90.f), vec3(1.f, 0.f, 0.f));
+  _r0 = rotate(_r0, radians(90.f), vec3(-1.f, 0.f, 0.f));
+  _r0 = rotate(_r0, radians(180.f), vec3(0.f, 1.f, 0.f));
   _rotation = _r0;
 }
 
@@ -151,7 +152,27 @@ void RenderManager::reset_view()
 void RenderManager::UI_pannel()
 {
   ImGui::Begin("Render Settings");
-  // ImGUI color picker for the background color
+  int i = 1;
+
+  static ImGuiComboFlags flags=0;
+  static int item_current_idx = 0; // Here we store our selection data as an index.
+  std::string s = _renderers[item_current_idx]->name;
+  if (ImGui::BeginCombo("Select Object", s.c_str(), flags))
+  {
+      for (int i = 0; i < int(_renderers.size()); i++) // WARN: pas sur que ce soit une bonne idée de cast in long signed int en int
+      {
+          const bool is_selected = (item_current_idx == i);
+          s = _renderers[i]->name;
+          if (ImGui::Selectable(s.c_str(), is_selected))
+              item_current_idx = i;
+
+          // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+          if (is_selected)
+              ImGui::SetItemDefaultFocus();
+      }
+      ImGui::EndCombo();
+  }
+  _renderers[item_current_idx]->UI_pannel();
   ImGui::End();
 }
 

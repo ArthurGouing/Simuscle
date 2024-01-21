@@ -5,6 +5,7 @@
 
 using namespace glm;
 
+
 //******** ABSTRACT CLASS ******** 
 
 Renderer::Renderer(std::string renderer_name, std::string vert_source, std::string frag_source) :
@@ -92,12 +93,11 @@ void Renderer::UI_pannel()
 {
   std::string title, text;
   title = "Renderer '"+ name +"'";
-  ImGui::Begin(title.c_str());
+  ImGui::SeparatorText(title.c_str());
   text = "Render vertex shader: " + _vshader_path;
   ImGui::Text(text.c_str());
   text = "Render frag shader:   " + _fshader_path;
   ImGui::Text(text.c_str());
-  ImGui::End();
 }
 
 
@@ -315,9 +315,9 @@ void MatcapRenderer<Curve>::draw_elements()
 {
   // Enlever le depth test
   glDisable(GL_DEPTH_TEST);
-  glLineWidth(0.f);
+  glLineWidth(1.f);
   glDrawElements(GL_LINES, _n_values, GL_UNSIGNED_INT, 0);
-  glPointSize(3.f);
+  glPointSize(6.f);
   glDrawElements(GL_POINTS, _n_values, GL_UNSIGNED_INT, 0);
   glEnable(GL_DEPTH_TEST);
   // et le remettre
@@ -466,7 +466,7 @@ void DebugRenderer::draw(glm::vec3 camera_pos, glm::mat4 rotation, float camera_
   // Draw point
   glBindVertexArray(_VAO_point);
   glBindBuffer(GL_ARRAY_BUFFER, _VBO_point);
-  glPointSize(3.f);
+  glPointSize(6.f);
   glDrawArrays(GL_POINTS, 0, _values_point.size());
   glEnable(GL_DEPTH_TEST);
 
@@ -578,7 +578,6 @@ GroundRenderer::~GroundRenderer()
 
 MarchingRenderer::MarchingRenderer(std::string name, std::string vert_path, std::string frag_path):
   Renderer(name, vert_path, frag_path),
-  background_color(0.2, 0.5, 0.5),
   fog_factor_sky(5.), fog_factor_ground(0.003),
   white_color(0.25), black_color(0.4), grid_size(0.),
   is_gamma_correction(true)
@@ -627,6 +626,7 @@ void MarchingRenderer::draw(glm::vec3 camera_pos, glm::mat4 rotation, float came
   glUniform3fv(glGetUniformLocation(_shaderProgram, "camera_pos"), 1, &camera_pos[0]);
   glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
   glUniform1fv(glGetUniformLocation(_shaderProgram, "camera_dist"), 1, &camera_dist);
+  
 
   glBindBuffer(GL_ARRAY_BUFFER, _VBO);
   glDrawArrays(GL_TRIANGLES, 0, 6);

@@ -109,7 +109,7 @@ void MuscleSystem::read_muscles_parameters(std::string file_name, std::string pr
     } else { Err_Print("Bad File structure", "muscle_system.cpp"); }
 
     // Create curve
-    int n_point = 5; 
+    int n_point = 7; 
 
     // Add muscle to the muscles list
     Muscle muscle(name, geometry_path, bone_insertion_1, bone_insertion_2, n_point, P0, P1, P2, P3, &solver_param);
@@ -247,7 +247,7 @@ void MuscleSystem::UI_pannel()
   ImGui::DragFloat("Alpha", &solver_param.alpha, 0.0000001, 1000);
   const char* simu_type_choice[] = { "static", "dynamic_implicit", "dynamic_visc_implicit", "dynamic_explicit", "dynamic_visc_explicit"};
   const char* preview = simu_type_choice[solver_param.methode];
-  if (ImGui::BeginCombo("Simulation type", preview, flags)) {
+  if (ImGui::BeginCombo("Simulation methode", preview, flags)) {
     for (int i = 0; i < 5; i++) {
       const bool is_selected = (solver_param.methode==i);
       if (ImGui::Selectable(simu_type_choice[i], is_selected)) {
@@ -264,7 +264,7 @@ void MuscleSystem::UI_pannel()
   // ImGui::Combo("Simulation type", &solver_param.methode, simu_type_choice, IM_ARRAYSIZE(simu_type_choice));
   const char* solver_type_choice[] = { "iteratif", "direct"};
   const char* preview2 = solver_type_choice[solver_param.solver];
-  if (ImGui::BeginCombo("Solver type", preview2, flags)) {
+  if (ImGui::BeginCombo("Solver", preview2, flags)) {
     for (int i = 0; i < 2; i++) {
       const bool is_selected_2 = (solver_param.solver==i);
       if (ImGui::Selectable(solver_type_choice[i], is_selected_2)) {

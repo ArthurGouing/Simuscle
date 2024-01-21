@@ -6,7 +6,7 @@
 #include <string>
 
 Timeline::Timeline() :
-  is_paused(true), is_loop(false),
+  is_paused(false), is_loop(true),
   _frame(0), _time(0.0f),
   _dtframe(1.0f/24.0f), _fps(24.0f),
   _first_frame(0), _last_frame(120)

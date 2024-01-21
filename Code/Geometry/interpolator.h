@@ -4,6 +4,7 @@
 // Parent: geometryinterpo.cpp
 // Date: 13/01/24
 // Content: Class that compute interpolation of function
+// Or surface, or analytique mesh surface. could ve template also to use different alg/methode to modelize the surface of the mesh
 //**********************************************************************************//
 #ifndef INTERPOLATOR_H
 #define INTERPOLATOR_H
@@ -84,7 +85,7 @@ class Interpolator // Find a better name
     // Destructor
     ~Interpolator();
 
-  private: // Variables
+  public: // Variables
     // Number of interpolation point
     int n_i, n_j; // along x|n_i and y|n_j
     // List of interpolation point

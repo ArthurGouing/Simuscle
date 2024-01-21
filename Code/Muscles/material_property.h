@@ -11,16 +11,18 @@
 //******** LIBRARY ******** 
 #include <cmath>
 #include <glm/glm.hpp>
+#include "Geometry/interpolator.h"
 
 /* 
  * For now, it contain the property of a circular beam, isotrope.
 */ 
+class Curve;
 
-class MaterialProperty  // Rename en beam element
+class MaterialProperty  // Rename en beam element // and/or make a struct for olding mechanicals property
 {
   public:
     MaterialProperty();
-    MaterialProperty(glm::vec3 pts_1, glm::vec3 pts_2, float rho, float r, float E, float nu, float k);
+    MaterialProperty(glm::vec3 pts_1, glm::vec3 pts_2, float rho, float r, float E, float nu, float k, glm::vec3 seem_dir);
     ~MaterialProperty(){};
 
     void update_properties();
@@ -38,6 +40,10 @@ class MaterialProperty  // Rename en beam element
     float get_Iz (){return Iz;};
 
     glm::vec3 get_direction(){return pts_2-pts_1;};
+    
+    // Rel variables:
+    float sdf_approx(glm::vec3 p, Interpolator &r);
+    float sdf_approx(MaterialProperty& el, Interpolator &r);
 
     // Set functions
     void set_rho(float new_rho){rho = new_rho;};
@@ -46,17 +52,21 @@ class MaterialProperty  // Rename en beam element
     void set_nu(float new_nu)  {nu = new_nu; update_properties();} // G depend of E and nu
     void set_k(float new_k)    {k = new_k;}
 
-    void set_pts(glm::vec3 new_pts_1, glm::vec3 new_pts_2){
+    void set_pts(glm::vec3 new_pts_1, glm::vec3 new_pts_2, glm::vec3 seem_dir){
       pts_1=new_pts_1; 
       pts_2=new_pts_2;
       compute_L();
+      e_z = normalize(new_pts_2-new_pts_1);
+      e_theta0 = normalize(cross(e_z, seem_dir));
     };
     // Note After changing MaterialProperty, we must rebuild the matrix K
 
+  private:
     float pi;  // The pi value (3.14)
  
     glm::vec3 pts_1;
     glm::vec3 pts_2;
+    glm::vec3 e_z, e_theta0;
     float L;   // The lenth of the element
 
     float rho; // The volumic mass of the muscle

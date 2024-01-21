@@ -32,7 +32,7 @@ Curve::Curve(std::string curve_name, int n_pts, glm::vec3 P0, glm::vec3 P1, glm:
     vec3 p1 = curve_points[i];
     vec3 p2 = curve_points[i+1];
 
-    elements[i].set_pts(p1, p2);
+    elements[i].set_pts(p1, p2, seem_dir);
   }
 }
 
@@ -75,6 +75,36 @@ Ray Curve::get_ray(float t, float theta)
   vec3 e_theta_0 = normalize(cross(e_z, seem_dir));
   r.direction = normalize(rotate(e_theta_0, theta, e_z));
   return r;
+}
+
+float Curve::sdf_approx(glm::vec3 p, Interpolator &r)
+/* Compute the sdf of a point p for segments of the curve */
+{
+  // Find the minimum on all elements
+  float d = std::numeric_limits<float>::max();
+  for(auto& el : elements) {
+    float d_test = el.sdf_approx(p, r);
+    if (d_test<d) {
+      d = d_test;
+    }
+  }
+  return d;
+}
+
+float Curve::sdf_approx(Curve& crv, Interpolator &r)
+/* Compute the sdf of a point p for segments of the curve */
+{
+  // Find the minimum on all elements
+  float d = std::numeric_limits<float>::max();
+  for(auto& el1 : elements) {
+    for(auto& el2 : crv.elements) {
+      float d_test = el1.sdf_approx(el2, r);
+      if (d_test<d) {
+        d = d_test;
+      }
+    }
+  }
+  return d;
 }
 
 // glm::vec3 Deformations::apply_rotation(glm::vec3 point, glm::vec3 rotation_center, float t) // TODO: faire la translation ici ausisi !!!!

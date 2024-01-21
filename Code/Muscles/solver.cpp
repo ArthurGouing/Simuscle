@@ -506,15 +506,9 @@ void Solver::solve_iteration(Qpoint q_0, Qpoint q_np1)
     update_b(q_0, q_np1);
     // Update values for next timestep
     q_n1 = q; // Update qn-1 before the solver because the solver change directly qn to make it converge to qn+1
-    Value_Print("\nq_n1", q_n1.coeffRef(0));
-    Value_Print("q",q.coeffRef(0));
     // Solver (il faut choisir le solver avant, pour éviter le if à chaque itération, c'est dégeulasse !)
     if (_parameters->methode==dynamic_explicit || _parameters->methode==dynamic_visc_explicit)
     {
-      Info_Print("\nA*q + b");
-      MatrixXf test = A*q;
-      Value_Print("Aq", test.coeffRef(0));
-      Value_Print("b", b.coeffRef(0));
       q = A*q + b;
       continue;
     }

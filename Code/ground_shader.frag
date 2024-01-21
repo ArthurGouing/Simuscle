@@ -15,9 +15,10 @@ float pattern(vec3 Pos, float d)
 
 void main()
 {
-  // vec3 background = 7. * vec3(0.03, 0.07, 0.07); // TODO: le récuếrer depuis le CPU pour qu'il soit commun avec le fondvec3
   // Init colors
   vec3 background = vec3(0.22, 0.28, 0.28);
+  background = vec3(0.28, 0.28, 0.28);
+  background = vec3(0.22, 0.22, 0.22);
   // background = pow(background, vec3(1./0.6545));
   vec3 dark = vec3(0.28, 0.28, 0.28);
   vec3 light = vec3(0.75, 0.75, 0.70)-dark;

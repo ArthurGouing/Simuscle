@@ -84,7 +84,9 @@ class RenderManager
     unsigned int _framebuffer;
     unsigned int _rbo;
     unsigned int _textureid, _fragmentShader;
-    bool _del_fbo;
+    bool _del_fbo; // tell if we have to delete the FBO (needed for the 1st frame)
+
+    // UI variable
 };
 
 #endif // !RENDER_MANAGER_H

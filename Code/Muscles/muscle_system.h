@@ -49,7 +49,7 @@ class MuscleSystem
 
     ~MuscleSystem();
 
-  private:
+  public:
     // Other class link
     MatcapRenderer<Geometry> *_geom_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?
     MatcapRenderer<GeometryInterpo> *_interpo_renderer; // Est ce qu'on mettrait pas un GeomRenderer directement ?

@@ -14,7 +14,7 @@
 #include "Render/renderer.h"
 #include "Skeleton/skeleton.h"
 #include "Muscles/muscle_system.h"
-// #include "Skin/skin.h"
+#include "Skin/skin.h"
 
 // Command line parser
 #include "Tools/argparse.hpp"
@@ -50,9 +50,11 @@ int main(int argc, char *argv[])
   Renderer *musc_renderer   = new MatcapRenderer<Geometry>("Muscle_shader", "skin_shader.vert", "skin_shader.frag", "red_matcap.png");
   Renderer *musc_renderer_2 = new MatcapRenderer<GeometryInterpo>("muscle_interpo_shader", "skin_shader.vert", "skin_shader.frag", "red_matcap.png");
   Renderer *curve_renderer  = new MatcapRenderer<Curve>("curve_shader", "crv_shader.vert", "crv_shader.frag", "white_matcap_2.jpg");
+  Renderer *skin_renderer   = new MatcapRenderer<Geometry>("Skin_shader", "skin_shader.vert", "skin_shader.frag", "white_matcap_2.jpg");
   Renderer *bgrnd_renderer  = new MarchingRenderer("Background_shader", "background_raymarching.vert", "background_raymarching.frag");
   Renderer *grnd_renderer   = new GroundRenderer("Ground_shader", "ground_shader.vert", "ground_shader.frag");
   Renderer *debug_renderer  = new DebugRenderer("debug_render", "line.vert", "line.frag");
+
   // Renderer *line = new LineRenderer(&r_manager, "line_shader.vert", "line_shader.frag");
   // Renderer matcap_render(&skeleton, &muscles/*, &character*/);
 
@@ -65,7 +67,8 @@ int main(int argc, char *argv[])
   // r_manager.add_renderer(musc_renderer);
   r_manager.add_renderer(musc_renderer_2);
   // r_manager.add_renderer(curve_renderer);
-  r_manager.add_renderer(debug_renderer);
+  r_manager.add_renderer(skin_renderer);
+  // r_manager.add_renderer(debug_renderer);
   // ...
 
   // Create Objects
@@ -73,7 +76,7 @@ int main(int argc, char *argv[])
   MuscleSystem muscles(project, dynamic_cast<MatcapRenderer<Geometry>*>(musc_renderer),
                                 dynamic_cast<MatcapRenderer<GeometryInterpo>*>(musc_renderer_2),
                                 dynamic_cast<MatcapRenderer<Curve>*>(curve_renderer),  &skeleton);
-  //Skin character(project, dynamic_cast<MatcapRenderer<Geometry>*>(skin_renderer), &skeleton, &muscles);
+  // Skin character(project, dynamic_cast<MatcapRenderer<Geometry>*>(skin_renderer), &skeleton, &muscles);
 
   // Init the application
   App Simuscle_app(&r_manager, &skeleton, &muscles);

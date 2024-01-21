@@ -2,64 +2,74 @@ import bpy
 import os
 from time import time
 
-def export_simuscle(context, filepath, use_some_setting):
+def export_simuscle(context, filepath, exp_skin, exp_muscles, exp_bones, exp_anim):
     print("Create directory : ", filepath)
     t = time()
     t0 = t
+    os.system("rm -r "+filepath)
     os.mkdir(filepath)
     os.mkdir(filepath+"/Muscles")
     os.mkdir(filepath+"/Bones")
+    os.mkdir(filepath+"/Skin")
     
     # Export Bones
-    bones = [obj for obj in bpy.data.collections["Skeleton"].objects if obj.parent is not None]
-    print(bones)
-    file = filepath+"/Bones/bones_info"
-    bone_file = open(file + ".json", "w")
-    bone_file.write("[\n")
-    for i, bone in enumerate(bones):
-        is_last = i ==(len(bones)-1)
-        bone_file.write(bone_info(bone, is_last))
-        print("Write "+bone.name, end=" ")
-        path_file = filepath+"/Bones/"+bone.name
-        export_mesh(path_file, bone)
-        print(f"(written in {time()-t:3f} sec)")
-        t = time()
-    bone_file.close()
-    t_bone = t
+    if exp_bones:
+        bones = [obj for obj in bpy.data.collections["Skeleton"].objects if obj.parent is not None]
+        print(bones)
+        file = filepath+"/Bones/bones_info"
+        bone_file = open(file + ".json", "w")
+        bone_file.write("[\n")
+        for i, bone in enumerate(bones):
+            is_last = i ==(len(bones)-1)
+            bone_file.write(bone_info(bone, is_last))
+            print("Write "+bone.name, end=" ")
+            path_file = filepath+"/Bones/"+bone.name
+            export_mesh(path_file, bone)
+            print(f"(written in {time()-t:3f} sec)")
+            t = time()
+        bone_file.close()
+        t_bone = t
     
     # Export Muscles
-    muscles = [obj for obj in bpy.data.collections["Muscles"].objects if obj.type=='MESH']
-    for coll in bpy.data.collections["Muscles"].children_recursive:
-        muscles += [obj for obj in coll.objects if obj.type=='MESH']
-    file = filepath+"/Muscles/muscles_info"
-    muscle_file = open(file + ".json", "w")
-    muscle_file.write("[")
-    for i, muscle in enumerate(muscles):
-        is_last = i==(len(muscles)-1)
-        muscle_file.write(muscle_info(muscle, is_last))
-        print("Write "+muscle.name, end="")
-        path_file = filepath+"/Muscles/"+muscle.name.replace(" ", "_")
-        export_mesh(path_file, muscle)
-        print(f"(written in {time()-t:.3f} sec)")
-        t = time()
-    muscle_file.write("\n]")
-    muscle_file.close()
-    t_muscle = t
+    if exp_muscles:
+        muscles = [obj for obj in bpy.data.collections["Muscles"].objects if obj.type=='MESH']
+        for coll in bpy.data.collections["Muscles"].children_recursive:
+            muscles += [obj for obj in coll.objects if obj.type=='MESH']
+        file = filepath+"/Muscles/muscles_info"
+        muscle_file = open(file + ".json", "w")
+        muscle_file.write("[")
+        for i, muscle in enumerate(muscles):
+            is_last = i==(len(muscles)-1)
+            muscle_file.write(muscle_info(muscle, is_last))
+            print("Write "+muscle.name, end="")
+            path_file = filepath+"/Muscles/"+muscle.name.replace(" ", "_")
+            export_mesh(path_file, muscle)
+            print(f"(written in {time()-t:.3f} sec)")
+            t = time()
+        muscle_file.write("\n]")
+        muscle_file.close()
+        t_muscle = t
     
     # Export Skin
-    skin = bpy.data.collections["Skin"].objects[0]
-    path_file = filepath+"/skin"
-    print("Write ", skin.name, end="")
-    export_mesh(path_file, skin)
-    print(f"(written in {time()-t:.3f} sec)")
-    t = time()
-    t_skin = t
+    if exp_skin:
+        skin = bpy.data.collections["Skin"].objects[0]
+        path_file = filepath+"/Skin/skin"
+        print("Write ", skin.name, end="")
+        export_mesh(path_file, skin)
+        print(f"(written in {time()-t:.3f} sec)")
+        # TODO: write armature weight
+        # And write simu mask
+        t = time()
+        t_skin = t
     
     # Export animation
-    print("Write ", skin.parent.name, end="")
-    path_file = filepath+"/animation"
-    export_anim(path_file, skin.parent)
-    t = time()
+    if exp_anim:
+        print("Write ", skin.parent.name, end="")
+        path_file = filepath+"/animation"
+        export_anim(path_file, skin.parent)
+        t = time()
+
+    # Timer
     print(f"T_bone : {t_bone-t0:.3f} sec")
     print(f"T_muscle : {t_muscle-t_bone:.3f} sec")
     print(f"T_skin : {t_skin-t_muscle:.3f} sec")
@@ -88,6 +98,9 @@ def muscle_info(muscle, is_last):
     """ Return JSON formated string containing all muscle info (curve)"""
     start_target = bpy.data.objects.get("start_target_"+muscle.name)
     end_target = bpy.data.objects.get("end_target_"+muscle.name)
+    print("\n"+muscle.name+" : ")
+    print(start_target)
+    print(end_target)
     curve = bpy.data.objects.get("curve_"+muscle.name)
     p0 = curve.data.splines[0].bezier_points[0].co
     p1 = curve.data.splines[0].bezier_points[0].handle_right
@@ -101,7 +114,7 @@ def muscle_info(muscle, is_last):
     info += f'    "insertion_2": "{end_target.parent_bone}",\n'
     info += f'    "curve": ['
     for i, p in enumerate(bezier_points):
-        info+= f' [{p.x}, {p.y}, {p.z}]'
+        info+= f' [ {p.x}, {p.y}, {p.z} ]'
         if i!=len(bezier_points)-1:
             info += ','
     info +=  f' ]\n'
@@ -185,8 +198,23 @@ class ExportSomeData(Operator, ExportHelper):
 
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
-    use_setting: BoolProperty(
-        name="Example Boolean",
+    exp_skin: BoolProperty(
+        name="Skin",
+        description="Example Tooltip",
+        default=True,
+    )
+    exp_mucsles: BoolProperty(
+        name="Muscles",
+        description="Example Tooltip",
+        default=True,
+    )
+    exp_bones: BoolProperty(
+        name="Bones",
+        description="Example Tooltip",
+        default=True,
+    )
+    exp_anim: BoolProperty(
+        name="Animation",
         description="Example Tooltip",
         default=True,
     )
@@ -202,7 +230,7 @@ class ExportSomeData(Operator, ExportHelper):
     )
 
     def execute(self, context):
-        return export_simuscle(context, self.filepath, self.use_setting)
+        return export_simuscle(context, self.filepath, self.exp_skin, self.exp_mucsles, self.exp_bones, self.exp_anim)
 
 
 # Only needed if you want to add into a dynamic menu

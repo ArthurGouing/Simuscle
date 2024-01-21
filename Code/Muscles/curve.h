@@ -12,10 +12,12 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <limits>
 #include <glm/glm.hpp>
 #include "Eigen_src/Sparse"
 #include "material_property.h"
 #include "Geometry/element.h"
+#include "Geometry/interpolator.h"
 #include "Tools/tools.h"
 
 struct Qpoint {  // Peut changer, dépend de commment on utilise pos et rot pour déformer le muscle
@@ -110,6 +112,8 @@ class Curve
     glm::vec3 tangent(float t);
     glm::vec3 derive_second(float t);
     Ray get_ray(float t, float theta); // return the ray orientated along er(z, theta)
+    float sdf_approx(glm::vec3 p, Interpolator &r);
+    float sdf_approx(Curve& c, Interpolator &r);
 
     // Get final position
     void update_values(std::vector<glm::vec3>* values, Deformations* deform); // depreciated

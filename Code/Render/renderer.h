@@ -243,7 +243,7 @@ class MarchingRenderer: public Renderer // TODO: grosse duplication de code ici,
 
   private:
     // Shader parameters
-    glm::vec3 background_color;
+    // glm::vec3 background_color;
     float fog_factor_sky, fog_factor_ground;
     float white_color, black_color, grid_size;
     bool is_gamma_correction;
