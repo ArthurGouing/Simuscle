@@ -7,12 +7,13 @@ Simuscle is a code created to compute musculo-skeletal animation in real-time.
 Here is more detailed information on the code on the [Simuscle website](https://simuscle.vercel.app/).
 
 # Installation
-***Dependency***: Simuscle required few basic library to be launch:
+***Dependency***: Simuscle required few basic libraries to be launch:
 * C++ compiler
+* Cmake
 * OpenGL
 * OpenCL
 
-If all the library are correctly installed, you can download the repository and compile Simuscle with:
+If all the library are correctly installed, you can download the repository and compile Simuscle with cmake:
 ```bash
 cd Code
 mkdir ./build
