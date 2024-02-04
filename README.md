@@ -14,7 +14,7 @@ Here is more detailed information on the code on the [Simuscle website](https://
 
 If all the library are correctly installed, you can download the repository and compile Simuscle with:
 ```bash
-cd code
+cd Code
 mkdir ./build
 cd ./build
 cmake ../
