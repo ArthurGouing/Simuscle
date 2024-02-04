@@ -1,6 +1,6 @@
 # Presentation
 
-Simuscle is a code created to compute musculo-skeletal animation in real-time.
+Simuscle is a software which realise the computation of musculo-skeletal animation in real-time. The input data, is an animation of a musculo-squeletal model of a creature, and Simuscle will compute the mesh cache to be render.
 
 ![demo](demo.gif)
 
