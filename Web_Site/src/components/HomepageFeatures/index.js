@@ -36,7 +36,7 @@ const FeatureList = [
   },
   {
     title: 'Technical aspect',
-    Img: '.img/interface.jpg',
+    Img: './img/interface.jpg',
     description: (
       <>
         Simuscle is done using OpenGL, and Dear ImGui, in C++.
