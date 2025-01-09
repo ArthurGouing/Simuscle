@@ -25,7 +25,7 @@ const FeatureList = [
   },
   {
     title: 'Human assets disponible and ready to use',
-    Img: './img/muscle.jpg',
+    Img: './img/Color muscle.jpg',
     description: (
       <>
         For testing and my personal uses, I set up a human body musculo-squeletal system, ready to simulate.
@@ -36,7 +36,7 @@ const FeatureList = [
   },
   {
     title: 'Technical aspect',
-    Img: 'https://i.imgur.com/yXOvdOSs.jpg',
+    Img: '.img/interface.jpg',
     description: (
       <>
         Simuscle is done using OpenGL, and Dear ImGui, in C++.
